@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Список товаров{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Товары</h1>
+    {% if user.is_authenticated and user.role == 'sales_executive' or user.is_authenticated and user.role == 'admin' %}
+        <a href="{% url 'product_add' %}" class="btn btn-success">Добавить товар</a>
+    {% endif %}
+</div>
+
+<form method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control" placeholder="Поиск по названию..." value="{{ query }}">
+        <button class="btn btn-outline-secondary" type="submit">Искать</button>
+    </div>
+</form>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+    {% for product in page_obj %}
+    <div class="col">
+        <div class="card h-100 shadow-sm">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+                <img src="{% static 'no_image.png' %}" class="card-img-top" alt="Нет изображения" style="height: 200px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                <p class="card-text text-muted flex-grow-1">{{ product.description|truncatechars:70 }}</p>
+                <div class="d-flex justify-content-between align-items-center mt-auto">
+                    <span class="fs-5 text-primary fw-bold">{{ product.price|floatformat:2 }} USD</span>
+                    <a href="{% url 'product_detail' product.pk %}" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">Товары не найдены!</h4>
+            <p>По вашему запросу "{{ query }}" ничего не найдено. Попробуйте изменить запрос или добавить новые товары.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Предыдущая</a></li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Предыдущая</span></li>
+        {% endif %}
+
+        {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Следующая</a></li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Следующая</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

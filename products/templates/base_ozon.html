@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ozon - интернет-магазин{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <style>
+        .ozon-gradient {
+            background: linear-gradient(135deg, #005BFF 0%, #00A8FF 100%);
+        }
+        .ozon-orange {
+            background: #FF6B35;
+        }
+        .ozon-blue {
+            background: #005BFF;
+        }
+        .product-card {
+            transition: all 0.3s ease;
+            border: 1px solid #E5E7EB;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-color: #005BFF;
+        }
+        .price-current {
+            color: #FF6B35;
+            font-weight: 700;
+        }
+        .price-old {
+            color: #9CA3AF;
+            text-decoration: line-through;
+        }
+        .rating-stars {
+            color: #FFD700;
+        }
+        .category-item {
+            transition: all 0.2s ease;
+        }
+        .category-item:hover {
+            background: #F3F4F6;
+            color: #005BFF;
+            transform: translateY(-2px);
+        }
+        
+        /* External link styles - убрано для категорий */
+        .search-input {
+            border: 2px solid #005BFF;
+            border-radius: 8px 0 0 8px;
+        }
+        .search-btn {
+            background: #005BFF;
+            border-radius: 0 8px 8px 0;
+        }
+        .cart-counter {
+            background: #FF6B35;
+            color: white;
+            border-radius: 50%;
+            min-width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <!-- Top Bar -->
+        <div class="bg-gray-100 py-2">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center text-sm text-gray-600">
+                    <div class="flex items-center space-x-4">
+                        <span><i class="fas fa-map-marker-alt mr-1"></i>Москва</span>
+                        <span><i class="fas fa-phone mr-1"></i>8 800 234-56-78</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="#" class="hover:text-blue-600">Помощь</a>
+                        <a href="#" class="hover:text-blue-600">Отследить заказ</a>
+                        <a href="#" class="hover:text-blue-600">Войти</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Header -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="text-3xl font-bold ozon-gradient bg-clip-text text-transparent">
+                        OZON
+                    </a>
+                </div>
+
+                <!-- Search -->
+                <div class="flex-1 max-w-2xl mx-8">
+                    <div class="relative">
+                        <form method="GET" action="/" class="flex">
+                            <input 
+                                type="text" 
+                                name="q" 
+                                placeholder="Поиск товаров"
+                                value="{{ search_query|default:'' }}"
+                                class="search-input flex-1 px-4 py-3 text-lg border-2 border-blue-500 focus:outline-none focus:border-blue-600"
+                            >
+                            <button type="submit" class="search-btn px-6 py-3 text-white hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Cart -->
+                <div class="flex items-center space-x-6">
+                    <a href="/cart/" class="relative flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-shopping-cart text-2xl"></i>
+                        <span class="hidden sm:block">Корзина</span>
+                        <span id="cart-counter" class="cart-counter">0</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-heart text-2xl"></i>
+                        <span class="hidden sm:block">Избранное</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="bg-white border-t">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <nav class="flex space-x-8 py-3 overflow-x-auto">
+                    <a href="/" class="category-item flex items-center space-x-2 px-4 py-2 rounded-lg whitespace-nowrap">
+                        <i class="fas fa-home"></i>
+                        <span>Главная</span>
+                    </a>
+                    {% for category in categories %}
+                    <a href="{% url 'category' category.slug %}" target="_blank" class="category-item flex items-center space-x-2 px-4 py-2 rounded-lg whitespace-nowrap">
+                        <i class="fas fa-{{ category.icon|default:'tag' }}"></i>
+                        <span>{{ category.name }}</span>
+                    </a>
+                    {% endfor %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">OZON</h3>
+                    <p class="text-gray-400">Интернет-магазин с миллионами товаров по выгодным ценам</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Покупателям</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Как сделать заказ</a></li>
+                        <li><a href="#" class="hover:text-white">Способы оплаты</a></li>
+                        <li><a href="#" class="hover:text-white">Доставка</a></li>
+                        <li><a href="#" class="hover:text-white">Возврат товара</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Компания</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">О нас</a></li>
+                        <li><a href="#" class="hover:text-white">Вакансии</a></li>
+                        <li><a href="#" class="hover:text-white">Контакты</a></li>
+                        <li><a href="#" class="hover:text-white">Партнерам</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Контакты</h4>
+                    <div class="space-y-2 text-gray-400">
+                        <p><i class="fas fa-phone mr-2"></i>8 800 234-56-78</p>
+                        <p><i class="fas fa-envelope mr-2"></i>info@ozon.ru</p>
+                        <div class="flex space-x-4 mt-4">
+                            <a href="#" class="text-2xl hover:text-white"><i class="fab fa-vk"></i></a>
+                            <a href="#" class="text-2xl hover:text-white"><i class="fab fa-telegram"></i></a>
+                            <a href="#" class="text-2xl hover:text-white"><i class="fab fa-youtube"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 OZON. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notifications -->
+    <div id="notifications" class="fixed top-20 right-4 z-50 space-y-2"></div>
+
+    <!-- Scripts -->
+    <script>
+        // Load cart count
+        function loadCartCount() {
+            fetch('/cart/count/')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cart-counter').textContent = data.count || 0;
+                })
+                .catch(error => console.error('Error loading cart count:', error));
+        }
+
+        // Add to cart
+        function addToCart(productId, quantity = 1) {
+            fetch(`/cart/add/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ quantity: quantity })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    loadCartCount();
+                    animateCartCounter();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding to cart:', error);
+                showNotification('Ошибка при добавлении в корзину', 'error');
+            });
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `p-4 rounded-lg shadow-lg max-w-sm ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            } text-white`;
+            notification.textContent = message;
+            
+            document.getElementById('notifications').appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Animate cart counter
+        function animateCartCounter() {
+            const counter = document.getElementById('cart-counter');
+            counter.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                counter.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Load cart count on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCartCount();
+        });
+    </script>
+</body>
+</html>
