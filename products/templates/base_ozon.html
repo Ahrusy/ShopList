@@ -1,11 +1,12 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{% get_current_language as LANGUAGE_CODE %}{{ LANGUAGE_CODE|default:'ru' }}" dir="{% if LANGUAGE_CODE == 'ar' %}rtl{% else %}ltr{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{% csrf_token %}">
-    <title>{% block title %}Ozon - интернет-магазин{% endblock %}</title>
+    <title>{% block title %}ShopList - Сайт для публикации физических товаров и адресов магазинов{% endblock %}</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,6 +18,10 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <style>
+        .max-w-8xl {
+            max-width: 88rem; /* 1408px */
+        }
+      
         .ozon-gradient {
             background: linear-gradient(135deg, #005BFF 0%, #00A8FF 100%);
         }
@@ -131,6 +136,85 @@
                 display: none;
             }
         }
+        
+        /* RTL Support */
+        [dir="rtl"] .flex-row-reverse {
+            flex-direction: row-reverse;
+        }
+        
+        [dir="rtl"] .text-left {
+            text-align: right;
+        }
+        
+        [dir="rtl"] .text-right {
+            text-align: left;
+        }
+        
+        [dir="rtl"] .ml-auto {
+            margin-left: 0;
+            margin-right: auto;
+        }
+        
+        [dir="rtl"] .mr-auto {
+            margin-right: 0;
+            margin-left: auto;
+        }
+        
+        [dir="rtl"] .pl-4 {
+            padding-left: 0;
+            padding-right: 1rem;
+        }
+        
+        [dir="rtl"] .pr-4 {
+            padding-right: 0;
+            padding-left: 1rem;
+        }
+        
+        [dir="rtl"] .ml-2 {
+            margin-left: 0;
+            margin-right: 0.5rem;
+        }
+        
+        [dir="rtl"] .mr-2 {
+            margin-right: 0;
+            margin-left: 0.5rem;
+        }
+        
+        [dir="rtl"] .space-x-4 > * + * {
+            margin-left: 0;
+            margin-right: 1rem;
+        }
+        
+        [dir="rtl"] .space-x-6 > * + * {
+            margin-left: 0;
+            margin-right: 1.5rem;
+        }
+        
+        [dir="rtl"] .space-x-8 > * + * {
+            margin-left: 0;
+            margin-right: 2rem;
+        }
+        
+        /* Arabic font support */
+        [dir="rtl"] body {
+            font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', 'Arial', sans-serif;
+        }
+        
+        /* RTL specific adjustments */
+        [dir="rtl"] .dropdown-menu {
+            right: 0;
+            left: auto;
+        }
+        
+        [dir="rtl"] .search-icon {
+            left: 0.75rem;
+            right: auto;
+        }
+        
+        [dir="rtl"] .search-input {
+            padding-left: 2.5rem;
+            padding-right: 1rem;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -138,7 +222,7 @@
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <!-- Top Bar -->
         <div class="bg-gray-50 py-2 border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
                 <div class="flex justify-between items-center text-sm text-gray-600">
                     <div class="flex items-center space-x-6">
                         <div class="relative group">
@@ -173,74 +257,115 @@
                         </span>
                     </div>
                     <div class="flex items-center space-x-6">
-                        <a href="{% url 'pages' %}" class="hover:text-blue-600">Информация</a>
-                        <a href="#" class="hover:text-blue-600">Отследить заказ</a>
-                        <a href="#" class="hover:text-blue-600">Войти</a>
+                        <a href="#" class="hover:text-blue-600 flex items-center space-x-1">
+                            <i class="fas fa-store text-green-600"></i>
+                            <span>Магазины</span>
+                        </a>
+                        <a href="#" class="hover:text-blue-600 flex items-center space-x-1">
+                            <i class="fas fa-tags text-blue-600"></i>
+                            <span>Категории</span>
+                        </a>
+                        <a href="#" class="hover:text-blue-600 flex items-center space-x-1">
+                            <i class="fas fa-map-marker-alt text-purple-600"></i>
+                            <span>Адреса</span>
+                        </a>
+                        <a href="#" class="hover:text-blue-600 flex items-center space-x-1">
+                            <i class="fas fa-user-tie text-orange-600"></i>
+                            <span>Для менеджеров</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </a>
+                        
+                        <!-- Delivery Address -->
+                        <div class="flex items-center space-x-1 text-sm">
+                            <i class="fas fa-map-marker-alt text-blue-600"></i>
+                            <span>Центральная ул., 73</span>
+                        </div>
+                        
+                        <!-- Language Switcher -->
+                        <div class="relative group">
+                            <button class="flex items-center space-x-1 hover:text-blue-600">
+                                <i class="fas fa-globe"></i>
+                                <span>{{ LANGUAGE_CODE|upper }}</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            <div class="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <a href="{% url 'set_language' %}?language=ru" class="block px-4 py-2 text-sm hover:bg-gray-100 {% if LANGUAGE_CODE == 'ru' %}bg-blue-50 text-blue-600{% endif %}">
+                                    <i class="fas fa-flag mr-2"></i>Русский
+                                </a>
+                                <a href="{% url 'set_language' %}?language=en" class="block px-4 py-2 text-sm hover:bg-gray-100 {% if LANGUAGE_CODE == 'en' %}bg-blue-50 text-blue-600{% endif %}">
+                                    <i class="fas fa-flag mr-2"></i>English
+                                </a>
+                                <a href="{% url 'set_language' %}?language=ar" class="block px-4 py-2 text-sm hover:bg-gray-100 {% if LANGUAGE_CODE == 'ar' %}bg-blue-50 text-blue-600{% endif %}">
+                                    <i class="fas fa-flag mr-2"></i>العربية
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Main Header -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-4">
             <div class="flex items-center justify-between">
                 <!-- Logo and Catalog -->
-                <div class="flex items-center space-x-4">
-                    <a href="/" class="text-2xl font-bold text-blue-600 hover:text-blue-700">
-                        OZON
+                <div class="flex items-center space-x-4 w-80">
+                    <a href="/" class="text-3xl font-bold text-blue-600 hover:text-blue-700">
+                        ShopList
                     </a>
                     
                     <!-- Catalog Button -->
                     <div class="relative group">
-                        <button id="catalogButton" class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-bars"></i>
-                            <span>Каталог</span>
+                        <button id="catalogButton" class="flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                            </svg>
+                            <span class="font-medium">Каталог</span>
                             <i class="fas fa-chevron-down text-xs"></i>
                         </button>
-                        
-                        <!-- Mega Menu -->
-                        <div id="catalogMegaMenu" class="absolute top-full left-0 mt-1 w-screen max-w-7xl bg-white border border-gray-200 rounded-lg shadow-2xl z-50 hidden">
-                            <div class="flex h-[500px]">
-                                <!-- Left Sidebar - Categories -->
-                                <div class="w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto">
-                                    <div class="p-4">
-                                        <div class="mb-4">
-                                            <div class="relative">
-                                                <input type="text" id="catalogSearch" placeholder="Поиск по каталогу..." class="w-full p-3 pl-10 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                                            </div>
+                    
+                    <!-- Mega Menu -->
+                    <div id="catalogMegaMenu" class="absolute top-full left-0 mt-1 w-screen max-w-7xl bg-white border border-gray-200 rounded-lg shadow-2xl z-50 hidden">
+                        <div class="flex h-[500px]">
+                            <!-- Left Sidebar - Categories -->
+                            <div class="w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto">
+                                <div class="p-4">
+                                    <div class="mb-4">
+                                        <div class="relative">
+                                            <input type="text" id="catalogSearch" placeholder="Поиск по каталогу..." class="w-full p-3 pl-10 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                                         </div>
-                                        <ul class="space-y-1">
-                                            {% for category in catalog_categories %}
-                                                <li>
-                                                    <a href="#" class="catalog-category-link flex items-center p-3 text-sm hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors group" data-category-id="{{ category.id }}">
-                                                        {% if category.icon %}
-                                                            <i class="{{ category.icon }} mr-3 text-gray-600 w-5 group-hover:text-blue-600"></i>
-                                                        {% endif %}
-                                                        <span class="font-medium">{{ category.name }}</span>
-                                                        <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-blue-600"></i>
-                                                    </a>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
                                     </div>
+                                    <ul class="space-y-1">
+                                        {% for category in catalog_categories %}
+                                            <li>
+                                                <a href="#" class="catalog-category-link flex items-center p-3 text-sm hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors group" data-category-id="{{ category.id }}">
+                                                    {% if category.icon %}
+                                                        <i class="{{ category.icon }} mr-3 text-gray-600 w-5 group-hover:text-blue-600"></i>
+                                                    {% endif %}
+                                                    <span class="font-medium">{{ category.name }}</span>
+                                                    <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-blue-600"></i>
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
                                 </div>
-                                
-                                <!-- Right Content - Subcategories -->
-                                <div class="flex-1 overflow-y-auto bg-white">
-                                    <div class="p-8">
-                                        <div class="flex items-center justify-between mb-8">
-                                            <h2 id="categoryTitle" class="text-3xl font-bold text-gray-900">Выберите категорию</h2>
-                                            <button id="closeCatalog" class="text-gray-400 hover:text-gray-600 text-3xl p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                        
-                                        <div id="categoryContent" class="space-y-8">
-                                            <div class="text-center text-gray-500 py-16">
-                                                <i class="fas fa-mouse-pointer text-6xl mb-6 text-gray-300"></i>
-                                                <p class="text-lg">Выберите категорию слева для просмотра подкатегорий</p>
-                                            </div>
+                            </div>
+                            
+                            <!-- Right Content - Subcategories -->
+                            <div class="flex-1 overflow-y-auto bg-white">
+                                <div class="p-8">
+                                    <div class="flex items-center justify-between mb-8">
+                                        <h2 id="categoryTitle" class="text-3xl font-bold text-gray-900">Выберите категорию</h2>
+                                        <button id="closeCatalog" class="text-gray-400 hover:text-gray-600 text-3xl p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div id="categoryContent" class="space-y-8">
+                                        <div class="text-center text-gray-500 py-16">
+                                            <i class="fas fa-mouse-pointer text-6xl mb-6 text-gray-300"></i>
+                                            <p class="text-lg">Выберите категорию слева для просмотра подкатегорий</p>
                                         </div>
                                     </div>
                                 </div>
@@ -250,56 +375,229 @@
                 </div>
 
                 <!-- Search -->
-                <div class="flex-1 max-w-2xl mx-8">
-                    <div class="relative">
-                        <form method="GET" action="/" class="flex">
+                <div class="w-[800px] min-w-[700px] mr-8" style="width: 800px !important; min-width: 700px !important;">
+                    <div class="relative w-full">
+                        <form method="GET" action="/" class="flex w-full">
                             <input 
                                 type="text" 
                                 name="q" 
-                                placeholder="Поиск товаров"
+                                placeholder="Искать на ShopList"
                                 value="{{ search_query|default:'' }}"
-                                class="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition-colors">
+                                class="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0">
+                            <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors">
                                 <i class="fas fa-search"></i>
                             </button>
                         </form>
                     </div>
                 </div>
 
-
-                <!-- Cart -->
-                <div class="flex items-center space-x-4">
-                    <a href="{% url 'cart' %}" class="relative flex items-center space-x-2 text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-shopping-cart text-xl"></i>
-                        <span class="cart-counter bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full" id="cart-counter">0</span>
+                <!-- User Actions -->
+                <div class="flex items-center space-x-8 w-80 justify-end">
+                    <!-- Profile/Login -->
+                    <div class="relative group">
+                        {% if user.is_authenticated %}
+                            <!-- Authenticated User -->
+                            <button class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+                                <div class="relative">
+                                    <i class="fas fa-user text-2xl"></i>
+                                    <span class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">21</span>
+                                </div>
+                                <span class="text-xs mt-1">{{ user.first_name|default:user.username }}</span>
+                            </button>
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <div class="px-4 py-2 border-b border-gray-100">
+                                    <p class="text-sm font-medium text-gray-900">Личный кабинет</p>
+                                    <p class="text-xs text-gray-500">{{ user.email }}</p>
+                                </div>
+                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-box mr-2"></i>Мои заказы
+                                </a>
+                                <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-heart mr-2"></i>Избранное
+                                </a>
+                                <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-cog mr-2"></i>Настройки
+                                </a>
+                                <hr class="my-1">
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm hover:bg-gray-100 text-red-600">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                                </a>
+                            </div>
+                        {% else %}
+                            <!-- Not Authenticated User -->
+                            <button class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+                                <i class="fas fa-user text-2xl"></i>
+                                <span class="text-xs mt-1">Войти</span>
+                            </button>
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <a href="{% url 'login' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-sign-in-alt mr-2"></i>Войти
+                                </a>
+                                <a href="{% url 'register' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-user-plus mr-2"></i>Зарегистрироваться
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Orders -->
+                    <a href="{% url 'order_list' %}" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-box text-2xl"></i>
+                        <span class="text-xs mt-1">Заказы</span>
                     </a>
-                    <a href="#" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
-                        <i class="fas fa-heart text-xl"></i>
-                        <span class="hidden sm:block">Избранное</span>
+                    
+                    <!-- Favorites -->
+                    <a href="#" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-heart text-2xl"></i>
+                        <span class="text-xs mt-1">Избранное</span>
+                    </a>
+                    
+                    <!-- Cart -->
+                    <a href="{% url 'cart' %}" class="relative flex flex-col items-center text-gray-700 hover:text-blue-600">
+                        <div class="relative">
+                            <i class="fas fa-shopping-cart text-2xl"></i>
+                            <span class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">1</span>
+                        </div>
+                        <span class="text-xs mt-1">Корзина</span>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Categories -->
+        <!-- Bottom Navigation -->
         <div class="bg-white border-t">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <nav class="flex space-x-8 py-3 overflow-x-auto">
-                    <a href="/" class="category-item flex items-center space-x-2 px-4 py-2 rounded-lg whitespace-nowrap">
-                        <i class="fas fa-home"></i>
-                        <span>Главная</span>
-                    </a>
-                    {% for category in categories %}
-                    <a href="{% url 'category' category.slug %}" target="_blank" class="category-item flex items-center space-x-2 px-4 py-2 rounded-lg whitespace-nowrap">
-                        <i class="fas fa-{{ category.icon|default:'tag' }}"></i>
-                        <span>{{ category.name }}</span>
-                    </a>
-                    {% endfor %}
+            <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
+                <nav class="flex items-center justify-between py-3">
+                    <div class="flex items-center space-x-6 relative overflow-hidden">
+                        <!-- Карусель категорий -->
+                        <div class="flex items-center space-x-6 transition-transform duration-300" id="categoriesCarousel">
+                            {% for category in categories %}
+                                <a href="{% url 'category_detail' category.slug %}" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 whitespace-nowrap">
+                                    {% if category.icon %}
+                                        <i class="{{ category.icon }} text-blue-600"></i>
+                                    {% endif %}
+                                    <span class="text-sm font-medium">{{ category.name }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Кнопки навигации карусели -->
+                        <button id="carouselPrev" class="absolute left-0 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors z-10">
+                            <i class="fas fa-chevron-left text-gray-600"></i>
+                        </button>
+                        <button id="carouselNext" class="absolute right-0 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors z-10">
+                            <i class="fas fa-chevron-right text-gray-600"></i>
+                        </button>
+                    </div>
                 </nav>
             </div>
         </div>
     </header>
+
+    <!-- Категории под поисковой строкой -->
+    <div class="bg-white py-4">
+        <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="flex items-center space-x-6 relative overflow-hidden">
+                <!-- Карусель категорий -->
+                <div class="flex items-center space-x-6 transition-transform duration-300" id="categoriesCarousel">
+                    {% for category in categories %}
+                        <a href="{% url 'category_detail' category.slug %}" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 whitespace-nowrap">
+                            {% if category.icon %}
+                                <i class="{{ category.icon }} text-blue-600"></i>
+                            {% endif %}
+                            <span class="text-sm font-medium">{{ category.name }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+                
+                <!-- Кнопки навигации карусели -->
+                <button id="carouselPrev" class="absolute left-0 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors z-10">
+                    <i class="fas fa-chevron-left text-gray-600"></i>
+                </button>
+                <button id="carouselNext" class="absolute right-0 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors z-10">
+                    <i class="fas fa-chevron-right text-gray-600"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Рекламная карусель в стиле Wildberries -->
+    <div class="bg-white py-4">
+        <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="relative overflow-hidden rounded-lg">
+                <!-- Карусель баннеров - показываем 3 баннера одновременно -->
+                <div class="flex transition-transform duration-500 ease-in-out" id="bannerCarousel">
+                    <div class="w-1/3 flex-shrink-0 px-2">
+                        <div class="bg-gradient-to-r from-red-500 to-pink-600 text-white p-6 rounded-lg h-80">
+                            <div class="flex items-center justify-between h-full">
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold mb-2">Скидки до 70%</h3>
+                                    <p class="text-sm opacity-90">На электронику и бытовую технику</p>
+                                </div>
+                                <div class="text-4xl opacity-30">
+                                    <i class="fas fa-laptop"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-1/3 flex-shrink-0 px-2">
+                        <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 rounded-lg h-80">
+                            <div class="flex items-center justify-between h-full">
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold mb-2">Новинки</h3>
+                                    <p class="text-sm opacity-90">Свежие поступления каждый день</p>
+                                </div>
+                                <div class="text-4xl opacity-30">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-1/3 flex-shrink-0 px-2">
+                        <div class="bg-gradient-to-r from-blue-500 to-cyan-600 text-white p-6 rounded-lg h-80">
+                            <div class="flex items-center justify-between h-full">
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold mb-2">Бесплатная доставка</h3>
+                                    <p class="text-sm opacity-90">При заказе от 2000₽</p>
+                                </div>
+                                <div class="text-4xl opacity-30">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-1/3 flex-shrink-0 px-2">
+                        <div class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-6 rounded-lg h-80">
+                            <div class="flex items-center justify-between h-full">
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold mb-2">Бренды</h3>
+                                    <p class="text-sm opacity-90">Только оригинальная продукция</p>
+                                </div>
+                                <div class="text-4xl opacity-30">
+                                    <i class="fas fa-award"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Индикаторы (точки) -->
+                <div class="flex justify-center space-x-2 mt-4">
+                    <button class="w-2 h-2 bg-red-500 rounded-full transition-all duration-300 banner-indicator active" data-slide="0"></button>
+                    <button class="w-2 h-2 bg-gray-300 rounded-full transition-all duration-300 banner-indicator" data-slide="1"></button>
+                </div>
+                
+                <!-- Кнопки навигации -->
+                <button id="bannerPrev" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-2 shadow-md transition-all duration-300">
+                    <i class="fas fa-chevron-left text-gray-600 text-sm"></i>
+                </button>
+                <button id="bannerNext" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-2 shadow-md transition-all duration-300">
+                    <i class="fas fa-chevron-right text-gray-600 text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Main Content -->
     <main class="min-h-screen">
@@ -308,41 +606,44 @@
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-9xl mx-auto px-6 sm:px-8 lg:px-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
-                    <h3 class="text-lg font-semibold mb-4">OZON</h3>
-                    <p class="text-gray-400">Интернет-магазин с миллионами товаров по выгодным ценам</p>
+                    <h3 class="text-lg font-semibold mb-4">ShopList</h3>
+                    <p class="text-gray-400">Сайт для публикации физических товаров и адресов магазинов</p>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-4">Покупателям</h4>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="{% url 'page_detail' 'how-to-order' %}" class="hover:text-white">Как сделать заказ</a></li>
-                        <li><a href="{% url 'page_detail' 'payment-methods' %}" class="hover:text-white">Способы оплаты</a></li>
-                        <li><a href="{% url 'page_detail' 'delivery' %}" class="hover:text-white">Доставка</a></li>
-                        <li><a href="{% url 'page_detail' 'returns' %}" class="hover:text-white">Возврат товара</a></li>
+                        <li><a href="#" class="hover:text-white">Как найти товар</a></li>
+                        <li><a href="#" class="hover:text-white">Адреса магазинов</a></li>
+                        <li><a href="#" class="hover:text-white">Наличие товаров</a></li>
+                        <li><a href="#" class="hover:text-white">Контакты</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4">Компания</h4>
+                    <h4 class="font-semibold mb-4">RetailNet Solutions</h4>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="{% url 'page_detail' 'about' %}" class="hover:text-white">О нас</a></li>
-                        <li><a href="{% url 'page_detail' 'careers' %}" class="hover:text-white">Вакансии</a></li>
-                        <li><a href="{% url 'page_detail' 'contacts' %}" class="hover:text-white">Контакты</a></li>
+                        <li><a href="#" class="hover:text-white">О компании</a></li>
+                        <li><a href="#" class="hover:text-white">IT-интеграция</a></li>
+                        <li><a href="#" class="hover:text-white">Розничные сети</a></li>
+                        <li><a href="#" class="hover:text-white">Контакты</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4">Партнерам</h4>
+                    <h4 class="font-semibold mb-4">Для магазинов</h4>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="{% url 'page_detail' 'sell-on-ozon' %}" class="hover:text-white">Продавайте на OZON</a></li>
-                        <li><a href="{% url 'page_detail' 'advertising' %}" class="hover:text-white">Реклама на OZON</a></li>
+                        <li><a href="#" class="hover:text-white">Добавить товары</a></li>
+                        <li><a href="#" class="hover:text-white">Управление ассортиментом</a></li>
+                        <li><a href="#" class="hover:text-white">Стать партнером</a></li>
+                        <li><a href="#" class="hover:text-white">Поддержка</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-4">Контакты</h4>
                     <div class="space-y-2 text-gray-400">
                         <p><i class="fas fa-phone mr-2"></i>8 800 234-56-78</p>
-                        <p><i class="fas fa-envelope mr-2"></i>info@ozon.ru</p>
+                        <p><i class="fas fa-envelope mr-2"></i>info@shoplist.ru</p>
                         <div class="flex space-x-4 mt-4">
                             <a href="#" class="text-2xl hover:text-white"><i class="fab fa-vk"></i></a>
                             <a href="#" class="text-2xl hover:text-white"><i class="fab fa-telegram"></i></a>
@@ -352,7 +653,7 @@
                 </div>
             </div>
             <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 OZON. Все права защищены.</p>
+                <p>&copy; 2024 ShopList by RetailNet Solutions. Все права защищены.</p>
             </div>
         </div>
     </footer>
@@ -512,5 +813,135 @@
     </script>
     
     <script src="{% static 'js/catalog.js' %}"></script>
+    
+    <!-- Карусель категорий -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const carousel = document.getElementById('categoriesCarousel');
+            const prevBtn = document.getElementById('carouselPrev');
+            const nextBtn = document.getElementById('carouselNext');
+            
+            if (carousel && prevBtn && nextBtn) {
+                let currentPosition = 0;
+                const itemWidth = 200; // Примерная ширина одного элемента
+                const visibleItems = 6; // Количество видимых элементов
+                
+                function updateCarousel() {
+                    carousel.style.transform = `translateX(-${currentPosition}px)`;
+                    
+                    // Показываем/скрываем кнопки в зависимости от позиции
+                    prevBtn.style.display = currentPosition > 0 ? 'block' : 'none';
+                    nextBtn.style.display = currentPosition < (carousel.children.length - visibleItems) * itemWidth ? 'block' : 'none';
+                }
+                
+                prevBtn.addEventListener('click', function() {
+                    if (currentPosition > 0) {
+                        currentPosition -= itemWidth;
+                        updateCarousel();
+                    }
+                });
+                
+                nextBtn.addEventListener('click', function() {
+                    const maxPosition = (carousel.children.length - visibleItems) * itemWidth;
+                    if (currentPosition < maxPosition) {
+                        currentPosition += itemWidth;
+                        updateCarousel();
+                    }
+                });
+                
+                // Инициализация
+                updateCarousel();
+            }
+        });
+    </script>
+    
+    <!-- Рекламная карусель -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bannerCarousel = document.getElementById('bannerCarousel');
+            const prevBtn = document.getElementById('bannerPrev');
+            const nextBtn = document.getElementById('bannerNext');
+            const indicators = document.querySelectorAll('.banner-indicator');
+            
+            if (bannerCarousel && prevBtn && nextBtn) {
+                let currentSlide = 0;
+                const totalSlides = bannerCarousel.children.length;
+                let autoSlideInterval;
+                
+                function updateCarousel() {
+                    // Показываем 3 баннера, прокручиваем по 1/3 ширины
+                    bannerCarousel.style.transform = `translateX(-${currentSlide * 33.333}%)`;
+                    
+                    // Обновляем индикаторы
+                    indicators.forEach((indicator, index) => {
+                        if (index === currentSlide) {
+                            indicator.classList.add('active');
+                            indicator.classList.remove('bg-gray-300');
+                            indicator.classList.add('bg-red-500');
+                        } else {
+                            indicator.classList.remove('active');
+                            indicator.classList.remove('bg-red-500');
+                            indicator.classList.add('bg-gray-300');
+                        }
+                    });
+                }
+                
+                function nextSlide() {
+                    // У нас 4 баннера, но показываем 3, поэтому максимум 1 слайд
+                    if (currentSlide < 1) {
+                        currentSlide = 1;
+                        updateCarousel();
+                    }
+                }
+                
+                function prevSlide() {
+                    // Возвращаемся к первому слайду
+                    if (currentSlide > 0) {
+                        currentSlide = 0;
+                        updateCarousel();
+                    }
+                }
+                
+                function startAutoSlide() {
+                    autoSlideInterval = setInterval(nextSlide, 5000); // Меняем каждые 5 секунд
+                }
+                
+                function stopAutoSlide() {
+                    clearInterval(autoSlideInterval);
+                }
+                
+                // Обработчики кнопок
+                nextBtn.addEventListener('click', function() {
+                    stopAutoSlide();
+                    nextSlide();
+                    startAutoSlide();
+                });
+                
+                prevBtn.addEventListener('click', function() {
+                    stopAutoSlide();
+                    prevSlide();
+                    startAutoSlide();
+                });
+                
+                // Обработчики индикаторов
+                indicators.forEach((indicator, index) => {
+                    indicator.addEventListener('click', function() {
+                        stopAutoSlide();
+                        currentSlide = index;
+                        updateCarousel();
+                        startAutoSlide();
+                    });
+                });
+                
+                // Останавливаем автопрокрутку при наведении
+                bannerCarousel.addEventListener('mouseenter', stopAutoSlide);
+                bannerCarousel.addEventListener('mouseleave', startAutoSlide);
+                
+                // Инициализация
+                updateCarousel();
+                startAutoSlide();
+            }
+        });
+    </script>
 </body>
 </html>

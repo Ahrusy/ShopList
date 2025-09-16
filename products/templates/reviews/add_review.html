@@ -1,0 +1,61 @@
+{% extends 'base_ozon.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Добавить отзыв - {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Добавить отзыв</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            {% if product.images.first %}
+                                <img src="{{ product.images.first.image.url }}" class="img-fluid" alt="{{ product.name }}">
+                            {% else %}
+                                <img src="{% static 'img/no_image.png' %}" class="img-fluid" alt="{{ product.name }}">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <h5>{{ product.name }}</h5>
+                            <p class="text-muted">{{ product.description|truncatewords:20 }}</p>
+                            {% if has_purchased %}
+                                <span class="badge bg-success">Подтвержденная покупка</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="form-group mt-3">
+                            <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+                            <a href="{% url 'product_detail' product.id %}" class="btn btn-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Правила отзывов</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Будьте честными в своих отзывах</li>
+                        <li><i class="fas fa-check text-success"></i> Избегайте оскорблений и нецензурной лексики</li>
+                        <li><i class="fas fa-check text-success"></i> Не раскрывайте личную информацию</li>
+                        <li><i class="fas fa-check text-success"></i> Отзывы проходят модерацию</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

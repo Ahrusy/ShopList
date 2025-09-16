@@ -1,6 +1,6 @@
 from django.urls import path, include
 from . import views
-from . import cart_views
+from . import cart_views, review_views, notification_views, analytics_views, promo_views
 
 urlpatterns = [
     path('register/', views.register_view, name='register'),
@@ -31,4 +31,46 @@ urlpatterns = [
     path('pages/', views.page_list_view, name='pages'),
     path('pages/<slug:category_slug>/', views.page_list_view, name='pages_category'),
     path('page/<slug:slug>/', views.page_detail_view, name='page_detail'),
+    
+    # Заказы
+    path('checkout/', views.checkout_view, name='checkout'),
+    path('orders/', views.order_list_view, name='order_list'),
+    path('order/<int:order_id>/', views.order_detail_view, name='order_detail'),
+    path('order/<int:order_id>/tracking/', views.order_tracking_view, name='order_tracking'),
+    
+    # Отзывы
+    path('product/<int:product_id>/review/', review_views.add_review, name='add_review'),
+    path('review/<int:review_id>/edit/', review_views.edit_review, name='edit_review'),
+    path('review/<int:review_id>/delete/', review_views.delete_review, name='delete_review'),
+    path('product/<int:product_id>/reviews/', review_views.product_reviews, name='product_reviews'),
+    path('my-reviews/', review_views.my_reviews, name='my_reviews'),
+    path('review/<int:review_id>/like/', review_views.like_review, name='like_review'),
+    path('admin/reviews/moderate/', review_views.moderate_reviews, name='moderate_reviews'),
+    path('admin/review/<int:review_id>/approve/', review_views.approve_review, name='approve_review'),
+    path('admin/review/<int:review_id>/reject/', review_views.reject_review, name='reject_review'),
+    
+    # Уведомления
+    path('notifications/', notification_views.notification_list, name='notification_list'),
+    path('notification/<int:notification_id>/', notification_views.notification_detail, name='notification_detail'),
+    path('notification/<int:notification_id>/read/', notification_views.mark_as_read, name='mark_notification_read'),
+    path('notifications/mark-all-read/', notification_views.mark_all_as_read, name='mark_all_notifications_read'),
+    path('notification/<int:notification_id>/delete/', notification_views.delete_notification, name='delete_notification'),
+    path('notifications/unread-count/', notification_views.unread_count, name='unread_notifications_count'),
+    path('notifications/settings/', notification_views.notification_settings, name='notification_settings'),
+    
+    # Аналитика
+    path('analytics/', analytics_views.SellerAnalyticsView.as_view(), name='analytics_dashboard'),
+    path('analytics/data/', analytics_views.analytics_data, name='analytics_data'),
+    path('analytics/export/', analytics_views.export_analytics, name='export_analytics'),
+    
+    # Промокоды
+    path('admin/promo-codes/', promo_views.PromoCodeListView.as_view(), name='promo_list'),
+    path('admin/promo-code/create/', promo_views.PromoCodeCreateView.as_view(), name='promo_create'),
+    path('admin/promo-code/<int:pk>/edit/', promo_views.PromoCodeUpdateView.as_view(), name='promo_update'),
+    path('admin/promo-code/<int:pk>/delete/', promo_views.PromoCodeDeleteView.as_view(), name='promo_delete'),
+    path('promo-codes/apply/', promo_views.apply_promo_code, name='apply_promo_code'),
+    path('promo-codes/remove/', promo_views.remove_promo_code, name='remove_promo_code'),
+    path('promo-codes/check/<str:code>/', promo_views.check_promo_code, name='check_promo_code'),
+    path('promo-codes/available/', promo_views.promo_codes_available, name='available_promo_codes'),
+    path('admin/promo-codes/stats/', promo_views.promo_code_stats, name='promo_stats'),
 ]

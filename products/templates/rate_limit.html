@@ -1,0 +1,53 @@
+{% extends 'base_ozon.html' %}
+
+{% block title %}Превышен лимит запросов - Ozon{% endblock %}
+
+{% block content %}
+<div class="bg-white min-h-screen flex items-center justify-center">
+    <div class="max-w-md mx-auto text-center px-4">
+        <div class="mb-8">
+            <i class="fas fa-clock text-6xl text-orange-500 mb-4"></i>
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Превышен лимит запросов</h1>
+            <p class="text-gray-600 mb-6">
+                Вы сделали слишком много запросов. Пожалуйста, подождите 
+                <span id="countdown" class="font-semibold text-blue-600">{{ retry_after }}</span> 
+                секунд перед повторной попыткой.
+            </p>
+        </div>
+        
+        <div class="space-y-4">
+            <a href="{% url 'index' %}" 
+               class="inline-block bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                <i class="fas fa-home mr-2"></i>
+                На главную
+            </a>
+            
+            <div class="text-sm text-gray-500">
+                <p>Если проблема повторяется, обратитесь в службу поддержки</p>
+                <p class="mt-2">
+                    <i class="fas fa-phone mr-1"></i>
+                    8 800 234-56-78
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Обратный отсчет
+let countdown = {{ retry_after }};
+const countdownElement = document.getElementById('countdown');
+
+const timer = setInterval(() => {
+    countdown--;
+    countdownElement.textContent = countdown;
+    
+    if (countdown <= 0) {
+        clearInterval(timer);
+        countdownElement.textContent = '0';
+        // Можно добавить автоматическое обновление страницы
+        // window.location.reload();
+    }
+}, 1000);
+</script>
+{% endblock %}

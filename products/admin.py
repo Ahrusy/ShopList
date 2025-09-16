@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import (
     User, Category, Shop, Tag, Product, ProductImage, ProductCharacteristic,
     Seller, Order, OrderItem, Review, Cart, CartItem, Commission,
-    Location, UserLocation, PageCategory, Page
+    Location, UserLocation, PageCategory, Page, PromoCode, Notification
 )
 
 
@@ -23,16 +23,15 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'parent', 'level', 'sort_order', 'is_active', 'show_in_megamenu', 'created_at')
+    list_display = ('slug', 'parent', 'level', 'sort_order', 'is_active', 'show_in_megamenu', 'created_at')
     list_filter = ('is_active', 'show_in_megamenu', 'parent', 'created_at')
-    search_fields = ('name', 'description', 'slug')
-    prepopulated_fields = {'slug': ('name',)}
+    search_fields = ('slug',)
     list_editable = ('sort_order', 'is_active', 'show_in_megamenu')
-    ordering = ('sort_order', 'name')
+    ordering = ('sort_order', 'slug')
     
     fieldsets = (
         (_('Основная информация'), {
-            'fields': ('name', 'slug', 'description', 'icon')
+            'fields': ('slug', 'icon')
         }),
         (_('Иерархия'), {
             'fields': ('parent',)
@@ -50,15 +49,15 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Shop)
 class ShopAdmin(admin.ModelAdmin):
-    list_display = ('name', 'city', 'phone', 'email', 'is_active', 'created_at')
-    list_filter = ('is_active', 'city', 'created_at')
-    search_fields = ('name', 'address', 'city', 'phone', 'email')
+    list_display = ('phone', 'email', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('phone', 'email')
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'color', 'created_at')
-    search_fields = ('name',)
+    list_display = ('color', 'created_at')
+    search_fields = ('color',)
 
 
 class ProductImageInline(admin.TabularInline):
@@ -211,3 +210,40 @@ class PageAdmin(admin.ModelAdmin):
         }),
     )
     ordering = ('category__sort_order', 'sort_order', 'title')
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'discount_type', 'discount_value', 'min_order_amount', 'used_count', 'is_active', 'valid_from', 'valid_until')
+    list_filter = ('discount_type', 'is_active', 'valid_from', 'valid_until', 'created_at')
+    search_fields = ('code',)
+    fieldsets = (
+        (_('Основная информация'), {
+            'fields': ('code', 'discount_type', 'discount_value')
+        }),
+        (_('Условия'), {
+            'fields': ('min_order_amount', 'max_uses', 'valid_from', 'valid_until')
+        }),
+        (_('Статистика'), {
+            'fields': ('used_count', 'is_active'),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ('used_count', 'created_at')
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'type', 'title', 'is_read', 'created_at')
+    list_filter = ('type', 'is_read', 'created_at')
+    search_fields = ('user__username', 'title', 'message')
+    fieldsets = (
+        (_('Основная информация'), {
+            'fields': ('user', 'type', 'title', 'message')
+        }),
+        (_('Статус'), {
+            'fields': ('is_read',)
+        }),
+    )
+    readonly_fields = ('created_at',)
+    ordering = ('-created_at',)

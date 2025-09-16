@@ -18,11 +18,11 @@
             <!-- Product Images -->
             <div class="space-y-4">
                 <!-- Main Image -->
-                <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer">
                     {% if product.images.first %}
                         <img src="{{ product.images.first.image.url }}" 
                              alt="{{ product.name }}" 
-                             class="w-full h-full object-cover">
+                             class="main-image w-full h-full object-cover hover:scale-105 transition-transform duration-300">
                     {% else %}
                         <div class="w-full h-full flex items-center justify-center">
                             <i class="fas fa-image text-gray-400 text-6xl"></i>
@@ -34,7 +34,7 @@
                 {% if product.images.count > 1 %}
                 <div class="grid grid-cols-4 gap-2">
                     {% for image in product.images.all|slice:":4" %}
-                    <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500">
+                    <div class="thumbnail aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
                         <img src="{{ image.image.url }}" 
                              alt="{{ product.name }}" 
                              class="w-full h-full object-cover">
@@ -42,6 +42,20 @@
                     {% endfor %}
                 </div>
                 {% endif %}
+                
+                <!-- PhotoSwipe Gallery (hidden) -->
+                <div class="product-gallery" style="display: none;">
+                    {% for image in product.images.all %}
+                    <a href="{{ image.image.url }}" 
+                       data-pswp-width="1200" 
+                       data-pswp-height="1200" 
+                       target="_blank">
+                        <img src="{{ image.image.url }}" 
+                             alt="{{ product.name }}" 
+                             style="display: none;">
+                    </a>
+                    {% endfor %}
+                </div>
             </div>
 
             <!-- Product Info -->
@@ -205,5 +219,59 @@ function changeQuantity(delta) {
     const newValue = Math.max(1, Math.min({{ product.stock_quantity }}, currentValue + delta));
     input.value = newValue;
 }
+</script>
+
+<!-- PhotoSwipe CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/photoswipe.css">
+
+<!-- PhotoSwipe JS -->
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/photoswipe.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/photoswipe-lightbox.umd.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация PhotoSwipe для галереи изображений
+    const gallery = document.querySelector('.product-gallery');
+    if (gallery) {
+        const lightbox = new PhotoSwipeLightbox({
+            gallery: '.product-gallery',
+            children: 'a',
+            showHideOpacity: true,
+            bgOpacity: 0.8,
+            spacing: 0.1,
+            allowPanToNext: false,
+            loop: false,
+            preload: [1, 2],
+            pswpModule: PhotoSwipe
+        });
+        
+        lightbox.init();
+    }
+    
+    // Обработка клика на миниатюры
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    thumbnails.forEach((thumb, index) => {
+        thumb.addEventListener('click', function(e) {
+            e.preventDefault();
+            const mainImage = document.querySelector('.main-image');
+            const img = this.querySelector('img');
+            if (mainImage && img) {
+                mainImage.src = img.src;
+                mainImage.alt = img.alt;
+            }
+        });
+    });
+    
+    // Обработка клика на главное изображение
+    const mainImage = document.querySelector('.main-image');
+    if (mainImage) {
+        mainImage.addEventListener('click', function() {
+            const firstGalleryLink = document.querySelector('.product-gallery a');
+            if (firstGalleryLink) {
+                firstGalleryLink.click();
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

@@ -8,6 +8,6 @@ def catalog_categories(request):
             parent__isnull=True, 
             is_active=True, 
             show_in_megamenu=True
-        ).order_by('sort_order', 'name')
+        ).order_by('sort_order', 'slug')
     }
 

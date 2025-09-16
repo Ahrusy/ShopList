@@ -17,17 +17,17 @@ class SellerSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name', 'slug', 'created_at']
+        fields = ['id', 'name', 'slug', 'icon', 'is_active', 'created_at']
 
 class ShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
-        fields = ['id', 'name', 'address', 'city', 'latitude', 'longitude', 'created_at']
+        fields = ['id', 'name', 'address', 'city', 'latitude', 'longitude', 'phone', 'email', 'is_active', 'created_at']
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'color']
 
 class ProductCharacteristicSerializer(serializers.ModelSerializer):
     class Meta:

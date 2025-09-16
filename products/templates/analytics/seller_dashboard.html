@@ -1,0 +1,335 @@
+{% extends 'base_ozon.html' %}
+
+{% block title %}Аналитика{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Аналитический дашборд</h2>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="exportAnalytics()">
+                        <i class="fas fa-download me-2"></i>Экспорт
+                    </button>
+                    <select class="form-select d-inline-block w-auto" id="period-select" onchange="updateCharts()">
+                        <option value="7">7 дней</option>
+                        <option value="30" selected>30 дней</option>
+                        <option value="90">90 дней</option>
+                        <option value="365">1 год</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Общая статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_products }}</h4>
+                            <p class="mb-0">Всего товаров</p>
+                        </div>
+                        <i class="fas fa-box fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_orders }}</h4>
+                            <p class="mb-0">Всего заказов</p>
+                        </div>
+                        <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_revenue|floatformat:0 }} ₽</h4>
+                            <p class="mb-0">Общая выручка</p>
+                        </div>
+                        <i class="fas fa-ruble-sign fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ avg_rating }}</h4>
+                            <p class="mb-0">Средний рейтинг</p>
+                        </div>
+                        <i class="fas fa-star fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Графики -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Продажи по дням</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Статистика заказов</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Завершено</span>
+                            <span class="fw-bold text-success">{{ completed_orders }}</span>
+                        </div>
+                        <div class="progress mt-1">
+                            <div class="progress-bar bg-success" style="width: {% if total_orders > 0 %}{{ completed_orders|mul:100|div:total_orders }}{% else %}0{% endif %}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>В обработке</span>
+                            <span class="fw-bold text-warning">{{ pending_orders }}</span>
+                        </div>
+                        <div class="progress mt-1">
+                            <div class="progress-bar bg-warning" style="width: {% if total_orders > 0 %}{{ pending_orders|mul:100|div:total_orders }}{% else %}0{% endif %}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Топ товары по продажам</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="productsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Распределение отзывов</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="reviewsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Таблица топ товаров -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Топ товары</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Товар</th>
+                                    <th>Продажи</th>
+                                    <th>Выручка</th>
+                                    <th>Рейтинг</th>
+                                    <th>Отзывы</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in top_products %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if product.images.first %}
+                                                    <img src="{{ product.images.first.image.url }}" class="me-2" width="40" height="40" alt="{{ product.name }}">
+                                                {% endif %}
+                                                <div>
+                                                    <h6 class="mb-0">{{ product.name|truncatechars:30 }}</h6>
+                                                    <small class="text-muted">{{ product.sku }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ product.total_sales|default:0 }}</td>
+                                        <td>{{ product.total_revenue|default:0|floatformat:0 }} ₽</td>
+                                        <td>
+                                            <div class="rating">
+                                                {% for i in "12345" %}
+                                                    {% if i|add:0 <= product.rating %}
+                                                        <i class="fas fa-star text-warning"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </td>
+                                        <td>{{ product.reviews_count }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Нет данных</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let salesChart, productsChart, reviewsChart;
+
+function initCharts() {
+    // График продаж
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Выручка (₽)',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // График товаров
+    const productsCtx = document.getElementById('productsChart').getContext('2d');
+    productsChart = new Chart(productsCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Продажи (шт.)',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // График отзывов
+    const reviewsCtx = document.getElementById('reviewsChart').getContext('2d');
+    reviewsChart = new Chart(reviewsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['1 звезда', '2 звезды', '3 звезды', '4 звезды', '5 звезд'],
+            datasets: [{
+                data: [0, 0, 0, 0, 0],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(255, 205, 86, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 205, 86, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+}
+
+function updateCharts() {
+    const period = document.getElementById('period-select').value;
+    
+    // Обновляем график продаж
+    fetch(`/analytics/data/?type=sales&period=${period}`)
+    .then(response => response.json())
+    .then(data => {
+        salesChart.data.labels = data.labels;
+        salesChart.data.datasets[0].data = data.datasets[0].data;
+        salesChart.update();
+    });
+    
+    // Обновляем график товаров
+    fetch(`/analytics/data/?type=products&period=${period}`)
+    .then(response => response.json())
+    .then(data => {
+        productsChart.data.labels = data.labels;
+        productsChart.data.datasets[0].data = data.datasets[0].data;
+        productsChart.update();
+    });
+    
+    // Обновляем график отзывов
+    fetch(`/analytics/data/?type=reviews&period=${period}`)
+    .then(response => response.json())
+    .then(data => {
+        reviewsChart.data.datasets[0].data = data.datasets[0].data;
+        reviewsChart.update();
+    });
+}
+
+function exportAnalytics() {
+    const period = document.getElementById('period-select').value;
+    window.open(`/analytics/export/?period=${period}`, '_blank');
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    updateCharts();
+});
+</script>
+{% endblock %}

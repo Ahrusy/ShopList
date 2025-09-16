@@ -14,11 +14,12 @@ from django.utils import translation
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.db.models import F
+from decimal import Decimal
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django_filters.views import FilterView
 from .filters import ProductFilter # Этот файл еще не создан, но будет создан позже
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm
-from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page
+from .forms import CustomUserCreationForm, CustomAuthenticationForm, ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm, OrderForm, OrderItemForm
+from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page, Order, OrderItem, Cart, CartItem
 from .services.product_service import ProductService # Импортируем сервис
 from django.forms import inlineformset_factory
 
@@ -94,7 +95,7 @@ def index(request):
         parent__isnull=True, 
         is_active=True, 
         show_in_megamenu=True
-    ).order_by('sort_order', 'name')
+    ).order_by('sort_order', 'slug')
     
     context = {
         'products': products,
@@ -114,10 +115,10 @@ def category_view(request, category_slug):
     products = Product.objects.filter(
         category=category, 
         is_active=True
-    ).select_related('seller').prefetch_related('images', 'tags')
+    ).select_related('seller', 'category').prefetch_related('images', 'tags', 'shops', 'characteristics')
     
     # Получаем все категории для навигации
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True).prefetch_related('children')
     
     # Фильтрация и поиск
     search_query = request.GET.get('q')
@@ -147,7 +148,7 @@ def category_view(request, category_slug):
     products = paginator.get_page(page_number)
     
     # Подкатегории (если есть)
-    subcategories = Category.objects.filter(parent=category) if hasattr(category, 'parent') else []
+    subcategories = Category.objects.filter(parent=category, is_active=True) if hasattr(category, 'parent') else []
     
     context = {
         'category': category,
@@ -440,6 +441,27 @@ def test_location_view(request):
     }
     return render(request, 'test_location.html', context)
 
+def product_detail(request, product_id):
+    """Детальная страница товара"""
+    product = get_object_or_404(Product, id=product_id)
+    
+    # Увеличиваем счетчик просмотров
+    product.views_count = F('views_count') + 1
+    product.save(update_fields=['views_count'])
+    
+    # Получаем похожие товары из той же категории
+    related_products = Product.objects.filter(
+        category=product.category,
+        is_active=True
+    ).exclude(id=product.id)[:4]
+    
+    context = {
+        'product': product,
+        'related_products': related_products,
+    }
+    
+    return render(request, 'product_detail.html', context)
+
 
 def page_list_view(request, category_slug=None):
     """Список страниц по категориям"""
@@ -471,3 +493,115 @@ def page_detail_view(request, slug):
         'categories': categories,
     }
     return render(request, 'pages/detail.html', context)
+
+
+# Представления для оформления заказа
+@login_required
+def checkout_view(request):
+    """Страница оформления заказа"""
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_items = cart.items.select_related('product').prefetch_related('product__images')
+    except Cart.DoesNotExist:
+        cart_items = CartItem.objects.none()
+        messages.warning(request, _("Ваша корзина пуста"))
+        return redirect('cart')
+    
+    if not cart_items.exists():
+        messages.warning(request, _("Ваша корзина пуста"))
+        return redirect('cart')
+    
+    if request.method == 'POST':
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            # Создаем заказ
+            order = form.save(commit=False)
+            order.user = request.user
+            order.payment_method = form.cleaned_data['payment_method']
+            order.delivery_method = form.cleaned_data['delivery_method']
+            
+            # Рассчитываем общую сумму
+            total_amount = sum(item.total_price for item in cart_items)
+            order.total_amount = total_amount
+            
+            # Добавляем стоимость доставки
+            if order.delivery_method == 'courier':
+                order.shipping_cost = Decimal('300.00')  # 300 рублей за курьерскую доставку
+            elif order.delivery_method == 'post':
+                order.shipping_cost = Decimal('150.00')  # 150 рублей за почтовую доставку
+            else:  # pickup
+                order.shipping_cost = Decimal('0.00')  # Бесплатно при самовывозе
+            
+            order.total_amount += order.shipping_cost
+            order.save()
+            
+            # Создаем позиции заказа
+            for cart_item in cart_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=cart_item.product,
+                    quantity=cart_item.quantity,
+                    price=cart_item.product.final_price,
+                    total_price=cart_item.total_price
+                )
+            
+            # Очищаем корзину
+            cart_items.delete()
+            
+            messages.success(request, _("Заказ успешно оформлен! Номер заказа: {}").format(order.order_number))
+            return redirect('order_detail', order_id=order.id)
+    else:
+        form = OrderForm()
+    
+    context = {
+        'form': form,
+        'cart_items': cart_items,
+        'cart': cart,
+    }
+    return render(request, 'checkout.html', context)
+
+
+@login_required
+def order_detail_view(request, order_id):
+    """Детальная страница заказа"""
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    order_items = order.items.select_related('product').prefetch_related('product__images')
+    
+    context = {
+        'order': order,
+        'order_items': order_items,
+    }
+    return render(request, 'order_detail.html', context)
+
+
+@login_required
+def order_list_view(request):
+    """Список заказов пользователя"""
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    
+    context = {
+        'orders': orders,
+    }
+    return render(request, 'order_list.html', context)
+
+
+@login_required
+def order_tracking_view(request, order_id):
+    """Отслеживание заказа"""
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    
+    # Статусы заказа с описаниями
+    status_descriptions = {
+        'pending': _('Заказ ожидает подтверждения'),
+        'confirmed': _('Заказ подтвержден и готовится к отправке'),
+        'processing': _('Заказ обрабатывается'),
+        'shipped': _('Заказ отправлен'),
+        'delivered': _('Заказ доставлен'),
+        'cancelled': _('Заказ отменен'),
+    }
+    
+    context = {
+        'order': order,
+        'status_description': status_descriptions.get(order.status, _('Неизвестный статус')),
+    }
+    return render(request, 'order_tracking.html', context)

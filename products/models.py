@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-# from django.contrib.postgres.search import SearchVectorField, SearchVector
+from django.contrib.postgres.search import SearchVectorField, SearchVector
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.text import slugify
@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 import uuid
+# from parler.models import TranslatableModel, TranslatedFields # Закомментировано
 
 
 class User(AbstractUser):
@@ -26,10 +27,12 @@ class User(AbstractUser):
         return self.username
 
 
-class Category(models.Model):
+class Category(models.Model): # Изменено с TranslatableModel
     """Модель категории товаров"""
-    name = models.CharField(max_length=100, verbose_name=_("Название"))
-    description = models.TextField(blank=True, verbose_name=_("Описание"))
+    # translations = TranslatedFields( # Закомментировано
+    name=models.CharField(max_length=100, verbose_name=_("Название"))
+    description=models.TextField(blank=True, verbose_name=_("Описание"))
+    # ) # Закомментировано
     slug = models.SlugField(max_length=100, unique=True, verbose_name=_("URL-адрес"))
     icon = models.CharField(max_length=50, blank=True, verbose_name=_("Иконка"))
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Родительская категория"))
@@ -60,11 +63,11 @@ class Category(models.Model):
     @property
     def children_list(self):
         """Возвращает дочерние категории как список для шаблонов"""
-        return list(self.children.filter(is_active=True).order_by('sort_order', 'name'))
+        return list(self.children.filter(is_active=True).order_by('sort_order', 'slug'))
 
     def get_children(self):
         """Возвращает дочерние категории"""
-        return self.children.filter(is_active=True).order_by('sort_order', 'name')
+        return self.children.filter(is_active=True).order_by('sort_order', 'slug')
 
     def get_all_children(self):
         """Возвращает все дочерние категории рекурсивно"""
@@ -76,14 +79,16 @@ class Category(models.Model):
     class Meta:
         verbose_name = _("Категория")
         verbose_name_plural = _("Категории")
-        ordering = ['sort_order', 'name']
+        ordering = ['sort_order', 'slug']
 
 
-class Shop(models.Model):
+class Shop(models.Model): # Изменено с TranslatableModel
     """Модель магазина"""
-    name = models.CharField(max_length=255, verbose_name=_("Название"))
-    address = models.TextField(verbose_name=_("Адрес"))
-    city = models.CharField(max_length=100, verbose_name=_("Город"))
+    # translations = TranslatedFields( # Закомментировано
+    name=models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Название"))
+    address=models.TextField(blank=True, null=True, verbose_name=_("Адрес"))
+    city=models.CharField(max_length=100, blank=True, null=True, verbose_name=_("Город"))
+    # ) # Закомментировано
     latitude = models.FloatField(blank=True, null=True, verbose_name=_("Широта"))
     longitude = models.FloatField(blank=True, null=True, verbose_name=_("Долгота"))
     phone = models.CharField(max_length=20, blank=True, verbose_name=_("Телефон"))
@@ -98,12 +103,14 @@ class Shop(models.Model):
     class Meta:
         verbose_name = _("Магазин")
         verbose_name_plural = _("Магазины")
-        ordering = ['name']
+        ordering = ['phone']
 
 
-class Tag(models.Model):
+class Tag(models.Model): # Изменено с TranslatableModel
     """Модель тега"""
-    name = models.CharField(max_length=50, unique=True, verbose_name=_("Название"))
+    # translations = TranslatedFields( # Закомментировано
+    name=models.CharField(max_length=50, unique=True, verbose_name=_("Название"))
+    # ) # Закомментировано
     color = models.CharField(max_length=7, default='#007bff', verbose_name=_("Цвет"))
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата создания"))
 
@@ -113,7 +120,7 @@ class Tag(models.Model):
     class Meta:
         verbose_name = _("Тег")
         verbose_name_plural = _("Теги")
-        ordering = ['name']
+        ordering = ['color']
 
 
 class Seller(models.Model):
@@ -138,14 +145,18 @@ class Seller(models.Model):
         ordering = ['-created_at']
 
 
-class Product(models.Model):
+class Product(models.Model): # Изменено с TranslatableModel
     """Модель товара"""
-    name = models.CharField(max_length=255, verbose_name=_("Название"))
-    description = models.TextField(verbose_name=_("Описание"))
+    # translations = TranslatedFields( # Закомментировано
+    name=models.CharField(max_length=255, verbose_name=_("Название"))
+    description=models.TextField(verbose_name=_("Описание"))
+    # ) # Закомментировано
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Цена"))
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name=_("Цена со скидкой"))
+    currency = models.CharField(max_length=3, default='RUB', verbose_name=_("Валюта"))
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name=_("Категория"))
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='products', null=True, blank=True, verbose_name=_("Продавец"))
+    # shops = models.ManyToManyField(Shop, related_name='products', verbose_name=_("Магазины")) # Закомментировано
     tags = models.ManyToManyField(Tag, blank=True, related_name='products', verbose_name=_("Теги"))
     sku = models.CharField(max_length=100, unique=True, blank=True, verbose_name=_("Артикул"))
     stock_quantity = models.PositiveIntegerField(default=0, verbose_name=_("Количество на складе"))
@@ -153,7 +164,7 @@ class Product(models.Model):
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00, verbose_name=_("Рейтинг"))
     reviews_count = models.PositiveIntegerField(default=0, verbose_name=_("Количество отзывов"))
     views_count = models.PositiveIntegerField(default=0, verbose_name=_("Количество просмотров"))
-    # search_vector = SearchVectorField(blank=True, verbose_name=_("Вектор поиска"))
+    search_vector = SearchVectorField(null=True, verbose_name=_("Вектор поиска"))
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата создания"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
 
@@ -181,23 +192,13 @@ class Product(models.Model):
         verbose_name = _("Товар")
         verbose_name_plural = _("Товары")
         ordering = ['-created_at']
-
-
-class ProductCharacteristic(models.Model):
-    """Модель характеристики товара"""
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='characteristics', verbose_name=_("Товар"))
-    name = models.CharField(max_length=100, verbose_name=_("Название характеристики"))
-    value = models.CharField(max_length=255, verbose_name=_("Значение"))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
-
-    def __str__(self):
-        return f"{self.name}: {self.value}"
-
-    class Meta:
-        verbose_name = _("Характеристика товара")
-        verbose_name_plural = _("Характеристики товаров")
-        ordering = ['name']
+        indexes = [
+            models.Index(fields=['is_active', 'created_at']),
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['price']),
+            models.Index(fields=['rating']),
+            models.Index(fields=['views_count']),
+        ]
 
 
 class ProductImage(models.Model):
@@ -277,6 +278,12 @@ class Order(models.Model):
         verbose_name = _("Заказ")
         verbose_name_plural = _("Заказы")
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['status']),
+            models.Index(fields=['payment_status']),
+            models.Index(fields=['created_at']),
+        ]
 
 
 class OrderItem(models.Model):
@@ -390,12 +397,88 @@ class Commission(models.Model):
         ordering = ['-created_at']
 
 
+class PromoCode(models.Model):
+    """Модель промокода"""
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', _('Процент')),
+        ('fixed', _('Фиксированная сумма')),
+    ]
+    
+    code = models.CharField(max_length=50, unique=True, verbose_name=_("Код промокода"))
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, verbose_name=_("Тип скидки"))
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Размер скидки"))
+    min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name=_("Минимальная сумма заказа"))
+    max_uses = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Максимальное количество использований"))
+    used_count = models.PositiveIntegerField(default=0, verbose_name=_("Количество использований"))
+    valid_from = models.DateTimeField(verbose_name=_("Действует с"))
+    valid_until = models.DateTimeField(verbose_name=_("Действует до"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Активен"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    
+    def __str__(self):
+        return f"{self.code} - {self.discount_value}%"
+    
+    def is_valid(self):
+        """Проверяет, действителен ли промокод"""
+        from django.utils import timezone
+        now = timezone.now()
+        return (
+            self.is_active and
+            self.valid_from <= now <= self.valid_until and
+            (self.max_uses is None or self.used_count < self.max_uses)
+        )
+    
+    def calculate_discount(self, order_amount):
+        """Рассчитывает размер скидки для заказа"""
+        if not self.is_valid() or order_amount < self.min_order_amount:
+            return 0
+        
+        if self.discount_type == 'percentage':
+            return (order_amount * self.discount_value) / 100
+        else:  # fixed
+            return min(self.discount_value, order_amount)
+    
+    class Meta:
+        verbose_name = _("Промокод")
+        verbose_name_plural = _("Промокоды")
+        ordering = ['-created_at']
+
+
+class Notification(models.Model):
+    """Модель уведомления"""
+    NOTIFICATION_TYPES = [
+        ('order_created', _('Заказ создан')),
+        ('order_confirmed', _('Заказ подтвержден')),
+        ('order_shipped', _('Заказ отправлен')),
+        ('order_delivered', _('Заказ доставлен')),
+        ('order_cancelled', _('Заказ отменен')),
+        ('review_added', _('Добавлен отзыв')),
+        ('product_updated', _('Товар обновлен')),
+        ('promo_code', _('Промокод')),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_notifications', verbose_name=_("Пользователь"))
+    type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, verbose_name=_("Тип уведомления"))
+    title = models.CharField(max_length=200, verbose_name=_("Заголовок"))
+    message = models.TextField(verbose_name=_("Сообщение"))
+    is_read = models.BooleanField(default=False, verbose_name=_("Прочитано"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+    
+    class Meta:
+        verbose_name = _("Уведомление")
+        verbose_name_plural = _("Уведомления")
+        ordering = ['-created_at']
+
+
 # Сигналы
-# @receiver(post_save, sender=Product)
-# def update_product_search_vector(sender, instance, **kwargs):
-#     """Обновляет вектор поиска для товара"""
-#     instance.search_vector = SearchVector('name', 'description')
-#     instance.save(update_fields=['search_vector'])
+@receiver(post_save, sender=Product)
+def update_product_search_vector(sender, instance, **kwargs):
+    """Обновляет вектор поиска для товара"""
+    instance.search_vector = SearchVector('translations__name', 'translations__description')
+    instance.save(update_fields=['search_vector'])
 
 
 @receiver(post_save, sender=Review)

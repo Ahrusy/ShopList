@@ -3,7 +3,7 @@ from products.models import Location
 
 
 class Command(BaseCommand):
-    help = 'Загружает начальные данные локаций'
+    help = 'Загружает базовые локации'
 
     def handle(self, *args, **options):
         locations_data = [
@@ -86,76 +86,20 @@ class Command(BaseCommand):
                 'latitude': 47.2357,
                 'longitude': 39.7015,
                 'is_active': True
-            },
-            {
-                'name': 'Уфа',
-                'region': 'Республика Башкортостан',
-                'country': 'Россия',
-                'latitude': 54.7388,
-                'longitude': 55.9721,
-                'is_active': True
-            },
-            {
-                'name': 'Красноярск',
-                'region': 'Красноярский край',
-                'country': 'Россия',
-                'latitude': 56.0184,
-                'longitude': 92.8672,
-                'is_active': True
-            },
-            {
-                'name': 'Воронеж',
-                'region': 'Воронежская область',
-                'country': 'Россия',
-                'latitude': 51.6720,
-                'longitude': 39.1843,
-                'is_active': True
-            },
-            {
-                'name': 'Пермь',
-                'region': 'Пермский край',
-                'country': 'Россия',
-                'latitude': 58.0105,
-                'longitude': 56.2502,
-                'is_active': True
-            },
-            {
-                'name': 'Волгоград',
-                'region': 'Волгоградская область',
-                'country': 'Россия',
-                'latitude': 48.7080,
-                'longitude': 44.5133,
-                'is_active': True
             }
         ]
-
-        created_count = 0
-        updated_count = 0
 
         for location_data in locations_data:
             location, created = Location.objects.get_or_create(
                 name=location_data['name'],
+                region=location_data['region'],
                 defaults=location_data
             )
-            
             if created:
-                created_count += 1
-                self.stdout.write(
-                    self.style.SUCCESS(f'Создана локация: {location.name}')
-                )
+                self.stdout.write(f'Создана локация: {location.name}, {location.region}')
             else:
-                # Обновляем существующую локацию
-                for key, value in location_data.items():
-                    setattr(location, key, value)
-                location.save()
-                updated_count += 1
-                self.stdout.write(
-                    self.style.WARNING(f'Обновлена локация: {location.name}')
-                )
+                self.stdout.write(f'Локация уже существует: {location.name}, {location.region}')
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f'Загрузка завершена. Создано: {created_count}, обновлено: {updated_count}'
-            )
+            self.style.SUCCESS('Успешно загружены все локации!')
         )
-

@@ -71,6 +71,18 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework', # Для API
     'django_filters', # Для фильтрации в API
+    'parler', # Для мультиязычности
+    'crispy_forms', # Для форм
+    'crispy_bootstrap5', # Bootstrap 5 для crispy forms
+    # 'django_admin_interface', # Улучшенный админ интерфейс - отключено
+    'colorfield', # Поля для выбора цвета
+    # 'django_two_factor_auth', # Двухфакторная аутентификация - отключено
+    'django_ratelimit', # Ограничение скорости запросов
+    # 'notifications', # Уведомления - отключено
+    # 'drf_spectacular', # Swagger документация - отключено
+    # 'djangorestframework_simplejwt', # JWT токены - отключено
+    # 'django_redis', # Redis кэш - отключено
+    # 'celery', # Асинхронные задачи - отключено
     
     # Local apps
     'products', # Добавляем наше приложение
@@ -88,7 +100,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # 'django_otp.middleware.OTPMiddleware', # Для 2FA - временно отключено
     'products.middleware.LocationMiddleware', # Для обработки локации пользователя
+    'products.rate_limit_middleware.RateLimitMiddleware', # Для обработки rate limiting
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -124,14 +138,26 @@ LOGIN_URL = 'login' # Для 2FA
 
 # Use PostgreSQL in production, SQLite in development
 if env('DATABASE_URL'):
-    DATABASES = {
-        'default': dj_database_url.parse(env('DATABASE_URL'))
+        DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'shoplist_db',
+            'USER': 'postgres',
+            'PASSWORD': 'postgres',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
     }
 else:
+    # Настройка PostgreSQL для локальной разработки
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'shoplist_db',
+            'USER': 'postgres',
+            'PASSWORD': 'postgres',
+            'HOST': 'localhost',
+            'PORT': '5432',
         }
     }
 
@@ -186,10 +212,13 @@ PARLER_LANGUAGES = {
         {'code': 'ar',},
     ),
     'default': {
-        'fallback': 'en',
+        'fallback': 'ru',
         'hide_untranslated': False,
     }
 }
+
+PARLER_DEFAULT_LANGUAGE_CODE = 'ru'
+PARLER_ENABLE_CACHING = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -222,6 +251,13 @@ CACHES = {
         }
     }
 }
+
+# Настройки сессий с Redis
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+# Настройки кэширования для parler
+PARLER_CACHE = 'default'
 
 # Celery settings
 CELERY_BROKER_URL = REDIS_URL
@@ -278,8 +314,14 @@ SPECTACULAR_SETTINGS = {
 X_FRAME_OPTIONS = "SAMEORIGIN" # Для работы django-admin-interface
 
 # Django Two Factor Auth settings
-TWO_FACTOR_CALL_GATEWAY = 'two_factor.gateways.twilio.gateway.Twilio'
-TWO_FACTOR_SMS_GATEWAY = 'two_factor.gateways.twilio.gateway.Twilio'
+TWO_FACTOR_CALL_GATEWAY = 'two_factor.gateways.fake.Fake'
+TWO_FACTOR_SMS_GATEWAY = 'two_factor.gateways.fake.Fake'
+TWO_FACTOR_QR_FACTORY = 'qrcode.image.pil.PilImage'
+TWO_FACTOR_TOTP_ISSUER = 'ShopList Marketplace'
+
+# OTP settings
+OTP_TOTP_ISSUER = 'ShopList Marketplace'
+OTP_LOGIN_URL = 'two_factor:login'
 
 # Django Notifications settings
 NOTIFICATIONS_USE_JSONFIELD = True
@@ -310,3 +352,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
+
+# Настройки для Unsplash API
+UNSPLASH_ACCESS_KEY = os.getenv('UNSPLASH_ACCESS_KEY', '')
+UNSPLASH_SECRET_KEY = os.getenv('UNSPLASH_SECRET_KEY', '')

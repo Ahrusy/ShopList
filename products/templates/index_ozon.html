@@ -3,88 +3,11 @@
 {% block title %}Ozon - интернет-магазин{% endblock %}
 
 {% block content %}
-<!-- Hero Banner -->
-<div class="bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Main Banner -->
-        <div class="relative bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg overflow-hidden mb-6">
-            <div class="p-8 md:p-12">
-                <div class="max-w-2xl">
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                        Миллионы товаров по выгодным ценам
-                    </h1>
-                    <p class="text-lg text-gray-600 mb-6">
-                        Быстрая доставка, удобная оплата и гарантия качества
-                    </p>
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="#products" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center justify-center">
-                            <i class="fas fa-shopping-bag mr-2"></i>
-                            Смотреть товары
-                        </a>
-                        <a href="#" class="border border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center justify-center">
-                            <i class="fas fa-gift mr-2"></i>
-                            Специальные предложения
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Categories Section -->
-<div class="bg-white py-6">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-semibold text-gray-900">Популярные категории</h2>
-            <a href="#" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Все категории →</a>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-            {% for category in categories %}
-            <a href="{% url 'category' category.slug %}" class="category-item group p-3 rounded-lg hover:bg-gray-50 transition-all">
-                <div class="text-center">
-                    <div class="w-12 h-12 mx-auto mb-2 bg-gray-100 group-hover:bg-blue-50 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-{{ category.icon|default:'tag' }} text-gray-600 group-hover:text-blue-600 text-lg"></i>
-                    </div>
-                    <h3 class="text-xs font-medium text-gray-700 group-hover:text-blue-600 leading-tight">{{ category.name }}</h3>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-</div>
 
 <!-- Products Section -->
 <div id="products" class="bg-gray-50 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-            <div class="flex items-center space-x-3 mb-4 md:mb-0">
-                <h2 class="text-lg font-semibold text-gray-900">
-                    {% if search_query %}
-                        Результаты поиска: "{{ search_query }}"
-                    {% elif category_id %}
-                        {{ selected_category.name|default:"Товары" }}
-                    {% else %}
-                        Рекомендуем
-                    {% endif %}
-                </h2>
-                <span class="text-sm text-gray-500 bg-gray-200 px-2 py-1 rounded-full">{{ products.paginator.count }}</span>
-            </div>
-            
-            <div class="flex items-center space-x-3">
-                <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-600">Сортировка:</span>
-                    <select class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>По популярности</option>
-                        <option>По цене (возрастание)</option>
-                        <option>По цене (убывание)</option>
-                        <option>По рейтингу</option>
-                        <option>По новизне</option>
-                    </select>
-                </div>
-            </div>
-        </div>
 
         <!-- Products Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
