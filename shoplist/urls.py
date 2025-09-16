@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls.i18n import i18n_patterns # Для мультиязычности
 from django.views.i18n import set_language # Для смены языка
+from django.shortcuts import redirect
 from products.views import index, category_view, checkout_view, order_detail_view, order_list_view, test_location_view, page_list_view, page_detail_view, product_detail
 from products.api import urls as products_api_urls
 from rest_framework import routers
@@ -68,6 +69,9 @@ urlpatterns += i18n_patterns(
     path('pages/<str:slug>/', page_detail_view, name='page_detail'),
     # Аутентификация теперь в products.urls.auth_urls
     path('auth/', include('products.urls.auth_urls')),
+    # Редиректы для старых URL-ов
+    path('register/', lambda request: redirect('/ru/auth/register/'), name='old_register'),
+    path('login/', lambda request: redirect('/ru/auth/login/'), name='old_login'),
 )
 
 if settings.DEBUG:

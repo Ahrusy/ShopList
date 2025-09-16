@@ -35,7 +35,7 @@ def add_to_cart(request, product_id):
             return JsonResponse({
                 'success': False, 
                 'message': 'Необходимо войти в систему',
-                'redirect': '/accounts/login/'
+                'redirect': '/ru/auth/login/'
             }, status=401)
         else:
             messages.error(request, 'Необходимо войти в систему')
@@ -96,7 +96,7 @@ def update_cart_item(request, item_id):
             return JsonResponse({
                 'success': False, 
                 'message': 'Необходимо войти в систему',
-                'redirect': '/accounts/login/'
+                'redirect': '/ru/auth/login/'
             }, status=401)
         else:
             messages.error(request, 'Необходимо войти в систему')
@@ -151,7 +151,7 @@ def remove_from_cart(request, item_id):
             return JsonResponse({
                 'success': False, 
                 'message': 'Необходимо войти в систему',
-                'redirect': '/accounts/login/'
+                'redirect': '/ru/auth/login/'
             }, status=401)
         else:
             messages.error(request, 'Необходимо войти в систему')
@@ -186,7 +186,7 @@ def clear_cart(request):
             return JsonResponse({
                 'success': False, 
                 'message': 'Необходимо войти в систему',
-                'redirect': '/accounts/login/'
+                'redirect': '/ru/auth/login/'
             }, status=401)
         else:
             messages.error(request, 'Необходимо войти в систему')

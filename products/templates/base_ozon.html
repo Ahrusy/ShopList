@@ -705,7 +705,7 @@
             .then(response => {
                 if (response.status === 401) {
                     // User not authenticated, redirect to login
-                    window.location.href = '/accounts/login/';
+                    window.location.href = '/ru/auth/login/';
                     return;
                 }
                 if (!response.ok) {
