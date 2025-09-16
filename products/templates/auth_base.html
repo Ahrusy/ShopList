@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ShopList{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        .ozon-gradient {
+            background: linear-gradient(135deg, #005BFF 0%, #00A3FF 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-blue-600 hover:text-blue-700">
+                        ShopList
+                    </a>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="text-gray-700 hover:text-blue-600">Главная</a>
+                    <a href="/ru/categories/" class="text-gray-700 hover:text-blue-600">Категории</a>
+                    <a href="/ru/pages/" class="text-gray-700 hover:text-blue-600">О нас</a>
+                </nav>
+                
+                <!-- User Actions -->
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <div class="relative group">
+                            <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                    {{ user.first_name|first|default:user.username|first|upper }}
+                                </div>
+                                <span class="hidden md:block">{{ user.first_name|default:user.username }}</span>
+                            </button>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'auth:login' %}" class="text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-sign-in-alt mr-1"></i>Войти
+                        </a>
+                        <a href="{% url 'auth:register' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            <i class="fas fa-user-plus mr-1"></i>Регистрация
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8 mt-16">
+        <div class="max-w-9xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">ShopList</h3>
+                    <p class="text-gray-400">Сайт для публикации физических товаров и адресов магазинов</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Покупателям</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Как найти товар</a></li>
+                        <li><a href="#" class="hover:text-white">Адреса магазинов</a></li>
+                        <li><a href="#" class="hover:text-white">Наличие товаров</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">RetailNet Solutions</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">О компании</a></li>
+                        <li><a href="#" class="hover:text-white">IT-интеграция</a></li>
+                        <li><a href="#" class="hover:text-white">Розничные сети</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Контакты</h4>
+                    <div class="space-y-2 text-gray-400">
+                        <p><i class="fas fa-phone mr-2"></i>8 800 234-56-78</p>
+                        <p><i class="fas fa-envelope mr-2"></i>info@shoplist.ru</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 ShopList by RetailNet Solutions. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
