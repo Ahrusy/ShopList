@@ -1,0 +1,283 @@
+{% extends 'base_ozon.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Регистрация - ShopList{% endblock %}
+
+{% block content %}
+{% include 'components/auth_base.html' with 
+    title="Создать аккаунт" 
+    subtitle="Зарегистрируйтесь, чтобы начать покупки"
+    show_social_auth=True
+    submit_text="Зарегистрироваться"
+    divider_text="Уже есть аккаунт?"
+%}
+
+{% block form_content %}
+<!-- Переключатель способов регистрации -->
+<div class="mb-6">
+    <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+        <button type="button" 
+                id="phoneTab" 
+                class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors bg-white text-blue-600 shadow-sm">
+            <i class="fas fa-mobile-alt mr-2"></i>Телефон
+        </button>
+        <button type="button" 
+                id="emailTab" 
+                class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700">
+            <i class="fas fa-envelope mr-2"></i>Email
+        </button>
+    </div>
+</div>
+
+<!-- Регистрация по телефону -->
+<div id="phoneRegistration" class="registration-method">
+    {% include 'components/phone_input.html' %}
+    
+    <!-- Дополнительные поля для регистрации -->
+    <div class="mt-4 space-y-4">
+        <div>
+            <label for="first_name" class="block text-sm font-medium text-gray-700">
+                Имя
+            </label>
+            <input type="text" 
+                   id="first_name" 
+                   name="first_name" 
+                   class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                   placeholder="Введите ваше имя"
+                   required>
+        </div>
+        
+        <div>
+            <label for="last_name" class="block text-sm font-medium text-gray-700">
+                Фамилия
+            </label>
+            <input type="text" 
+                   id="last_name" 
+                   name="last_name" 
+                   class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                   placeholder="Введите вашу фамилию"
+                   required>
+        </div>
+    </div>
+</div>
+
+<!-- Регистрация по email -->
+<div id="emailRegistration" class="registration-method hidden">
+    <div class="space-y-4">
+        <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">
+                Email адрес
+            </label>
+            <input type="email" 
+                   id="email" 
+                   name="email" 
+                   class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                   placeholder="example@email.com"
+                   required>
+        </div>
+        
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">
+                Пароль
+            </label>
+            <div class="mt-1 relative">
+                <input type="password" 
+                       id="password" 
+                       name="password" 
+                       class="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                       placeholder="Минимум 8 символов"
+                       required>
+                <button type="button" 
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onclick="togglePassword('password')">
+                    <i class="fas fa-eye text-gray-400 hover:text-gray-600"></i>
+                </button>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Минимум 8 символов, включая буквы и цифры</p>
+        </div>
+        
+        <div>
+            <label for="password_confirm" class="block text-sm font-medium text-gray-700">
+                Подтвердите пароль
+            </label>
+            <div class="mt-1 relative">
+                <input type="password" 
+                       id="password_confirm" 
+                       name="password_confirm" 
+                       class="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                       placeholder="Повторите пароль"
+                       required>
+                <button type="button" 
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onclick="togglePassword('password_confirm')">
+                    <i class="fas fa-eye text-gray-400 hover:text-gray-600"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div>
+            <label for="first_name_email" class="block text-sm font-medium text-gray-700">
+                Имя
+            </label>
+            <input type="text" 
+                   id="first_name_email" 
+                   name="first_name_email" 
+                   class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                   placeholder="Введите ваше имя"
+                   required>
+        </div>
+        
+        <div>
+            <label for="last_name_email" class="block text-sm font-medium text-gray-700">
+                Фамилия
+            </label>
+            <input type="text" 
+                   id="last_name_email" 
+                   name="last_name_email" 
+                   class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                   placeholder="Введите вашу фамилию"
+                   required>
+        </div>
+    </div>
+</div>
+
+<!-- Согласие с условиями -->
+<div class="mt-6">
+    <div class="flex items-start">
+        <div class="flex items-center h-5">
+            <input id="agree_terms" 
+                   name="agree_terms" 
+                   type="checkbox" 
+                   class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                   required>
+        </div>
+        <div class="ml-3 text-sm">
+            <label for="agree_terms" class="text-gray-700">
+                Я согласен с 
+                <a href="/terms/" class="text-blue-600 hover:text-blue-500">условиями использования</a> 
+                и 
+                <a href="/privacy/" class="text-blue-600 hover:text-blue-500">политикой конфиденциальности</a>
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Скрытые поля для определения метода регистрации -->
+<input type="hidden" id="registration_method" name="registration_method" value="phone">
+{% endblock %}
+
+{% block additional_links %}
+<a href="{% url 'auth:login' %}" class="font-medium text-blue-600 hover:text-blue-500">
+    Войти в аккаунт
+</a>
+{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneTab = document.getElementById('phoneTab');
+    const emailTab = document.getElementById('emailTab');
+    const phoneRegistration = document.getElementById('phoneRegistration');
+    const emailRegistration = document.getElementById('emailRegistration');
+    const registrationMethod = document.getElementById('registration_method');
+
+    phoneTab.addEventListener('click', function() {
+        // Переключаем табы
+        phoneTab.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+        phoneTab.classList.remove('text-gray-500', 'hover:text-gray-700');
+        emailTab.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+        emailTab.classList.add('text-gray-500', 'hover:text-gray-700');
+        
+        // Переключаем контент
+        phoneRegistration.classList.remove('hidden');
+        emailRegistration.classList.add('hidden');
+        
+        // Устанавливаем метод
+        registrationMethod.value = 'phone';
+    });
+
+    emailTab.addEventListener('click', function() {
+        // Переключаем табы
+        emailTab.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+        emailTab.classList.remove('text-gray-500', 'hover:text-gray-700');
+        phoneTab.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+        phoneTab.classList.add('text-gray-500', 'hover:text-gray-700');
+        
+        // Переключаем контент
+        emailRegistration.classList.remove('hidden');
+        phoneRegistration.classList.add('hidden');
+        
+        // Устанавливаем метод
+        registrationMethod.value = 'email';
+    });
+
+    // Валидация формы
+    document.getElementById('authForm').addEventListener('submit', function(e) {
+        const method = registrationMethod.value;
+        
+        if (method === 'phone') {
+            const phone = document.getElementById('phone').value;
+            const smsCode = document.getElementById('sms_code').value;
+            
+            if (phone.length !== 10) {
+                e.preventDefault();
+                showNotification('Введите корректный номер телефона', 'error');
+                return;
+            }
+            
+            if (!smsCode || smsCode.length !== 6) {
+                e.preventDefault();
+                showNotification('Введите код подтверждения', 'error');
+                return;
+            }
+        } else {
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('password_confirm').value;
+            
+            if (password.length < 8) {
+                e.preventDefault();
+                showNotification('Пароль должен содержать минимум 8 символов', 'error');
+                return;
+            }
+            
+            if (password !== passwordConfirm) {
+                e.preventDefault();
+                showNotification('Пароли не совпадают', 'error');
+                return;
+            }
+        }
+    });
+});
+
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = field.nextElementSibling.querySelector('i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

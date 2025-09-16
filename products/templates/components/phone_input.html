@@ -1,0 +1,162 @@
+{% load static %}
+
+<!-- Компонент ввода телефона с SMS-подтверждением -->
+<div class="space-y-4">
+    <!-- Поле телефона -->
+    <div>
+        <label for="phone" class="block text-sm font-medium text-gray-700">
+            Номер телефона
+        </label>
+        <div class="mt-1 relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="text-gray-500 sm:text-sm">+7</span>
+            </div>
+            <input type="tel" 
+                   id="phone" 
+                   name="phone" 
+                   class="block w-full pl-12 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                   placeholder="(999) 123-45-67"
+                   maxlength="10"
+                   pattern="[0-9]{10}"
+                   required>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">Введите номер без +7</p>
+    </div>
+
+    <!-- Кнопка отправки SMS -->
+    <div id="smsSection" class="hidden">
+        <label for="sms_code" class="block text-sm font-medium text-gray-700">
+            Код подтверждения
+        </label>
+        <div class="mt-1 flex space-x-3">
+            <input type="text" 
+                   id="sms_code" 
+                   name="sms_code" 
+                   class="block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                   placeholder="Введите код из SMS"
+                   maxlength="6"
+                   pattern="[0-9]{6}">
+            <button type="button" 
+                    id="resendSms" 
+                    class="px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                Повторить
+            </button>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">Код действителен 5 минут</p>
+    </div>
+
+    <!-- Таймер для повторной отправки -->
+    <div id="timerSection" class="hidden text-center">
+        <p class="text-sm text-gray-500">
+            Повторная отправка через <span id="timer">60</span> сек
+        </p>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.getElementById('phone');
+    const smsSection = document.getElementById('smsSection');
+    const smsCodeInput = document.getElementById('sms_code');
+    const resendBtn = document.getElementById('resendSms');
+    const timerSection = document.getElementById('timerSection');
+    const timer = document.getElementById('timer');
+    
+    let countdown = 0;
+    let countdownInterval = null;
+
+    // Форматирование телефона
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 10) value = value.slice(0, 10);
+        e.target.value = value;
+    });
+
+    // Отправка SMS при заполнении телефона
+    phoneInput.addEventListener('blur', function() {
+        if (this.value.length === 10) {
+            sendSms();
+        }
+    });
+
+    function sendSms() {
+        const phone = '+7' + phoneInput.value;
+        
+        fetch('/api/auth/send-sms/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                phone: phone
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                smsSection.classList.remove('hidden');
+                startCountdown();
+                showNotification('SMS отправлен на номер ' + phone, 'success');
+            } else {
+                showNotification(data.message || 'Ошибка отправки SMS', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Ошибка отправки SMS', 'error');
+        });
+    }
+
+    function startCountdown() {
+        countdown = 60;
+        timerSection.classList.remove('hidden');
+        resendBtn.disabled = true;
+        
+        countdownInterval = setInterval(() => {
+            countdown--;
+            timer.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                timerSection.classList.add('hidden');
+                resendBtn.disabled = false;
+            }
+        }, 1000);
+    }
+
+    resendBtn.addEventListener('click', function() {
+        sendSms();
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-500 text-white' : 
+            type === 'error' ? 'bg-red-500 text-white' : 
+            'bg-blue-500 text-white'
+        }`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+});
+</script>

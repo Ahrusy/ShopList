@@ -1,0 +1,147 @@
+{% extends 'base_ozon.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Мои заказы - ShopList{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Хлебные крошки -->
+    <nav class="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+        <a href="/" class="hover:text-blue-600">Главная</a>
+        <i class="fas fa-chevron-right text-xs"></i>
+        <span class="text-gray-900">Мои заказы</span>
+    </nav>
+
+    <!-- Заголовок страницы -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Мои заказы</h1>
+        <p class="text-gray-600">Здесь вы можете отслеживать статус ваших заказов и просматривать историю покупок</p>
+    </div>
+
+    <!-- Статистика заказов -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-50 rounded-lg">
+                    <i class="fas fa-shopping-bag text-blue-600"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-500">Всего заказов</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ total_orders }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-50 rounded-lg">
+                    <i class="fas fa-clock text-yellow-600"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-500">В обработке</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ pending_orders }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-50 rounded-lg">
+                    <i class="fas fa-check-circle text-green-600"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-500">Доставлено</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ delivered_orders }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-2 bg-red-50 rounded-lg">
+                    <i class="fas fa-times-circle text-red-600"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-500">Отменено</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ cancelled_orders }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список заказов -->
+    {% include 'components/list_base.html' with 
+        title="История заказов" 
+        subtitle="Все ваши заказы в одном месте"
+        icon_class="fas fa-shopping-bag"
+        items=orders
+        item_template="components/order_item.html"
+        show_filters=True
+        filter_options=status_filters
+        pagination=True
+        empty_title="У вас пока нет заказов"
+        empty_description="Сделайте свой первый заказ и он появится здесь"
+        empty_action_url="/"
+        empty_action_text="Начать покупки"
+        empty_action_icon="fas fa-shopping-cart"
+        empty_icon_class="fas fa-shopping-bag"
+    %}
+</div>
+
+<!-- JavaScript для интерактивности -->
+<script>
+function cancelOrder(orderId) {
+    if (confirm('Вы уверены, что хотите отменить заказ?')) {
+        fetch(`/orders/${orderId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при отмене заказа');
+            }
+        });
+    }
+}
+
+function repeatOrder(orderId) {
+    fetch(`/orders/${orderId}/repeat/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '/cart/';
+        } else {
+            alert('Ошибка при повторении заказа');
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

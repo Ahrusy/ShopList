@@ -21,6 +21,7 @@ class User(AbstractUser):
         ('admin', _('Администратор')),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user', verbose_name=_("Роль"))
+    phone = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name=_("Телефон"))
     favorites = models.ManyToManyField('Product', related_name='favorited_by', blank=True, verbose_name=_("Избранные товары"))
 
     def __str__(self):
@@ -30,7 +31,7 @@ class User(AbstractUser):
 class Category(models.Model): # Изменено с TranslatableModel
     """Модель категории товаров"""
     # translations = TranslatedFields( # Закомментировано
-    name=models.CharField(max_length=100, verbose_name=_("Название"))
+    name=models.CharField(max_length=100, default="", verbose_name=_("Название"))
     description=models.TextField(blank=True, verbose_name=_("Описание"))
     # ) # Закомментировано
     slug = models.SlugField(max_length=100, unique=True, verbose_name=_("URL-адрес"))
@@ -109,7 +110,7 @@ class Shop(models.Model): # Изменено с TranslatableModel
 class Tag(models.Model): # Изменено с TranslatableModel
     """Модель тега"""
     # translations = TranslatedFields( # Закомментировано
-    name=models.CharField(max_length=50, unique=True, verbose_name=_("Название"))
+    name=models.CharField(max_length=50, unique=True, default="", verbose_name=_("Название"))
     # ) # Закомментировано
     color = models.CharField(max_length=7, default='#007bff', verbose_name=_("Цвет"))
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата создания"))
@@ -148,8 +149,8 @@ class Seller(models.Model):
 class Product(models.Model): # Изменено с TranslatableModel
     """Модель товара"""
     # translations = TranslatedFields( # Закомментировано
-    name=models.CharField(max_length=255, verbose_name=_("Название"))
-    description=models.TextField(verbose_name=_("Описание"))
+    name=models.CharField(max_length=255, default="", verbose_name=_("Название"))
+    description=models.TextField(default="", verbose_name=_("Описание"))
     # ) # Закомментировано
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Цена"))
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name=_("Цена со скидкой"))
@@ -587,6 +588,21 @@ class Page(models.Model):
         verbose_name = _("Страница")
         verbose_name_plural = _("Страницы")
         ordering = ['category__sort_order', 'sort_order', 'title']
+
+
+class Favorite(models.Model):
+    """Модель избранных товаров"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_items', verbose_name=_("Пользователь"))
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorites', verbose_name=_("Товар"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата добавления"))
+    
+    class Meta:
+        verbose_name = _("Избранное")
+        verbose_name_plural = _("Избранное")
+        unique_together = ['user', 'product']  # Один товар может быть в избранном у пользователя только один раз
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name}"
 
 
 @receiver(post_save, sender=User)

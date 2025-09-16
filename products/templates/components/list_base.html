@@ -1,0 +1,93 @@
+{% load static %}
+{% load i18n %}
+
+<!-- Базовый компонент для списков (заказы, избранное) -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200">
+    <!-- Заголовок -->
+    <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-blue-50 rounded-lg">
+                    <i class="{{ icon_class }} text-blue-600"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-900">{{ title }}</h1>
+                    <p class="text-sm text-gray-500">{{ subtitle }}</p>
+                </div>
+            </div>
+            {% if show_filters %}
+            <div class="flex items-center space-x-3">
+                <select class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>Все</option>
+                    {% for filter_option in filter_options %}
+                        <option value="{{ filter_option.value }}">{{ filter_option.label }}</option>
+                    {% endfor %}
+                </select>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
+                    <i class="fas fa-filter mr-2"></i>Фильтр
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Контент -->
+    <div class="p-6">
+        {% if items %}
+            <div class="space-y-4">
+                {% for item in items %}
+                    {% include item_template with item=item %}
+                {% endfor %}
+            </div>
+            
+            <!-- Пагинация -->
+            {% if pagination %}
+                <div class="mt-6 flex justify-center">
+                    <nav class="flex items-center space-x-2">
+                        {% if items.has_previous %}
+                            <a href="?page={{ items.previous_page_number }}" 
+                               class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        {% endif %}
+
+                        {% for num in items.paginator.page_range %}
+                            {% if items.number == num %}
+                                <span class="px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-md">
+                                    {{ num }}
+                                </span>
+                            {% elif num > items.number|add:'-3' and num < items.number|add:'3' %}
+                                <a href="?page={{ num }}" 
+                                   class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                    {{ num }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if items.has_next %}
+                            <a href="?page={{ items.next_page_number }}" 
+                               class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Пустое состояние -->
+            <div class="text-center py-12">
+                <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="{{ empty_icon_class }} text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">{{ empty_title }}</h3>
+                <p class="text-gray-500 mb-6">{{ empty_description }}</p>
+                {% if empty_action_url %}
+                    <a href="{{ empty_action_url }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="{{ empty_action_icon }} mr-2"></i>
+                        {{ empty_action_text }}
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>

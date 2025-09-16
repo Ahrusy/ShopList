@@ -1,0 +1,236 @@
+{% extends 'base_ozon.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Избранное - ShopList{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Хлебные крошки -->
+    <nav class="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+        <a href="/" class="hover:text-blue-600">Главная</a>
+        <i class="fas fa-chevron-right text-xs"></i>
+        <span class="text-gray-900">Избранное</span>
+    </nav>
+
+    <!-- Заголовок страницы -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Избранное</h1>
+        <p class="text-gray-600">Товары, которые вам понравились и которые вы хотите купить позже</p>
+    </div>
+
+    <!-- Действия с избранным -->
+    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center">
+                    <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-700">Выбрать все</span>
+                </label>
+                <span class="text-sm text-gray-500" id="selectedCount">0 товаров выбрано</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button id="addSelectedToCart" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm" disabled>
+                    <i class="fas fa-shopping-cart mr-2"></i>
+                    Добавить в корзину
+                </button>
+                <button id="removeSelected" class="px-4 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors text-sm" disabled>
+                    <i class="fas fa-trash mr-2"></i>
+                    Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список избранного -->
+    {% include 'components/list_base.html' with 
+        title="Избранные товары" 
+        subtitle="Товары, которые вы добавили в избранное"
+        icon_class="fas fa-heart"
+        items=favorites
+        item_template="components/favorite_item.html"
+        show_filters=True
+        filter_options=category_filters
+        pagination=True
+        empty_title="В избранном пока ничего нет"
+        empty_description="Добавляйте товары в избранное, нажимая на сердечко"
+        empty_action_url="/"
+        empty_action_text="Начать покупки"
+        empty_action_icon="fas fa-shopping-cart"
+        empty_icon_class="fas fa-heart"
+    %}
+</div>
+
+<!-- JavaScript для интерактивности -->
+<script>
+let selectedItems = new Set();
+
+// Выбор всех товаров
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+        if (this.checked) {
+            selectedItems.add(checkbox.dataset.itemId);
+        } else {
+            selectedItems.delete(checkbox.dataset.itemId);
+        }
+    });
+    updateSelectedCount();
+});
+
+// Выбор отдельных товаров
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('item-checkbox')) {
+        const itemId = e.target.dataset.itemId;
+        if (e.target.checked) {
+            selectedItems.add(itemId);
+        } else {
+            selectedItems.delete(itemId);
+        }
+        updateSelectedCount();
+    }
+});
+
+function updateSelectedCount() {
+    const count = selectedItems.size;
+    document.getElementById('selectedCount').textContent = `${count} товар${count === 1 ? '' : count < 5 ? 'а' : 'ов'} выбрано`;
+    
+    const addToCartBtn = document.getElementById('addSelectedToCart');
+    const removeBtn = document.getElementById('removeSelected');
+    
+    if (count > 0) {
+        addToCartBtn.disabled = false;
+        removeBtn.disabled = false;
+    } else {
+        addToCartBtn.disabled = true;
+        removeBtn.disabled = true;
+    }
+}
+
+// Добавление выбранных товаров в корзину
+document.getElementById('addSelectedToCart').addEventListener('click', function() {
+    if (selectedItems.size === 0) return;
+    
+    const productIds = Array.from(selectedItems);
+    
+    fetch('/api/cart/add-multiple/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            product_ids: productIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Товары добавлены в корзину', 'success');
+            // Убираем выбранные товары из избранного
+            selectedItems.forEach(itemId => {
+                removeFromFavorites(itemId);
+            });
+            selectedItems.clear();
+            updateSelectedCount();
+        } else {
+            showNotification('Ошибка при добавлении в корзину', 'error');
+        }
+    });
+});
+
+// Удаление выбранных товаров
+document.getElementById('removeSelected').addEventListener('click', function() {
+    if (selectedItems.size === 0) return;
+    
+    if (confirm(`Удалить ${selectedItems.size} товар${selectedItems.size === 1 ? '' : 'ов'} из избранного?`)) {
+        selectedItems.forEach(itemId => {
+            removeFromFavorites(itemId);
+        });
+        selectedItems.clear();
+        updateSelectedCount();
+    }
+});
+
+function removeFromFavorites(itemId) {
+    fetch(`/api/favorites/${itemId}/remove/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Удаляем элемент из DOM
+            const itemElement = document.querySelector(`[data-item-id="${itemId}"]`).closest('.border');
+            if (itemElement) {
+                itemElement.remove();
+            }
+            showNotification('Товар удален из избранного', 'success');
+        } else {
+            showNotification('Ошибка при удалении товара', 'error');
+        }
+    });
+}
+
+function addToCart(productId) {
+    fetch('/api/cart/add/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            product_id: productId,
+            quantity: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Товар добавлен в корзину', 'success');
+            loadCartCount();
+        } else {
+            showNotification('Ошибка при добавлении в корзину', 'error');
+        }
+    });
+}
+
+function showNotification(message, type = 'info') {
+    // Создаем уведомление
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Удаляем через 3 секунды
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

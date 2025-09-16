@@ -1,0 +1,85 @@
+{% load static %}
+{% load i18n %}
+
+<!-- Компонент элемента избранного -->
+<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div class="flex items-start space-x-4">
+        <!-- Изображение товара -->
+        <div class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            {% if item.product.image %}
+                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover rounded-lg">
+            {% else %}
+                <i class="fas fa-image text-gray-400 text-2xl"></i>
+            {% endif %}
+        </div>
+        
+        <!-- Информация о товаре -->
+        <div class="flex-1">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <h3 class="text-lg font-medium text-gray-900 mb-1">
+                        <a href="{% url 'product_detail' item.product.slug %}" class="hover:text-blue-600 transition-colors">
+                            {{ item.product.name }}
+                        </a>
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-2">{{ item.product.description|truncatewords:20 }}</p>
+                    
+                    <!-- Рейтинг и отзывы -->
+                    <div class="flex items-center space-x-4 mb-3">
+                        <div class="flex items-center space-x-1">
+                            <div class="flex">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="text-sm text-gray-500">4.5</span>
+                        </div>
+                        <span class="text-sm text-gray-500">123 отзыва</span>
+                    </div>
+                    
+                    <!-- Цена -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl font-semibold text-gray-900">{{ item.product.price }}₽</span>
+                        {% if item.product.old_price %}
+                            <span class="text-sm text-gray-500 line-through">{{ item.product.old_price }}₽</span>
+                            <span class="px-2 py-1 bg-red-50 text-red-700 rounded text-xs font-medium">
+                                -{{ item.product.discount_percentage }}%
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Действия -->
+                <div class="flex flex-col space-y-2 ml-4">
+                    <button class="p-2 text-gray-400 hover:text-red-500 transition-colors" 
+                            onclick="removeFromFavorites({{ item.id }})"
+                            title="Удалить из избранного">
+                        <i class="fas fa-heart-broken"></i>
+                    </button>
+                    
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                            onclick="addToCart({{ item.product.id }})">
+                        <i class="fas fa-shopping-cart mr-2"></i>
+                        В корзину
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Дополнительная информация -->
+            <div class="flex items-center space-x-4 mt-3 pt-3 border-t border-gray-100">
+                <div class="flex items-center space-x-1 text-sm text-gray-500">
+                    <i class="fas fa-truck"></i>
+                    <span>Бесплатная доставка</span>
+                </div>
+                <div class="flex items-center space-x-1 text-sm text-gray-500">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Гарантия</span>
+                </div>
+                <div class="flex items-center space-x-1 text-sm text-gray-500">
+                    <i class="fas fa-clock"></i>
+                    <span>Добавлено {{ item.created_at|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
