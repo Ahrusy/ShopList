@@ -34,16 +34,49 @@ class Category(models.Model):
     icon = models.CharField(max_length=50, blank=True, verbose_name=_("Иконка"))
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Родительская категория"))
     is_active = models.BooleanField(default=True, verbose_name=_("Активна"))
+    sort_order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок сортировки"))
+    show_in_megamenu = models.BooleanField(default=True, verbose_name=_("Показывать в мегаменю"))
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата создания"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
 
     def __str__(self):
         return self.name
 
+    @property
+    def level(self):
+        """Возвращает уровень вложенности категории"""
+        level = 0
+        parent = self.parent
+        while parent:
+            level += 1
+            parent = parent.parent
+        return level
+
+    @property
+    def is_root(self):
+        """Проверяет, является ли категория корневой"""
+        return self.parent is None
+
+    @property
+    def children_list(self):
+        """Возвращает дочерние категории как список для шаблонов"""
+        return list(self.children.filter(is_active=True).order_by('sort_order', 'name'))
+
+    def get_children(self):
+        """Возвращает дочерние категории"""
+        return self.children.filter(is_active=True).order_by('sort_order', 'name')
+
+    def get_all_children(self):
+        """Возвращает все дочерние категории рекурсивно"""
+        children = list(self.get_children())
+        for child in children:
+            children.extend(child.get_all_children())
+        return children
+
     class Meta:
         verbose_name = _("Категория")
         verbose_name_plural = _("Категории")
-        ordering = ['name']
+        ordering = ['sort_order', 'name']
 
 
 class Shop(models.Model):
@@ -148,6 +181,23 @@ class Product(models.Model):
         verbose_name = _("Товар")
         verbose_name_plural = _("Товары")
         ordering = ['-created_at']
+
+
+class ProductCharacteristic(models.Model):
+    """Модель характеристики товара"""
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='characteristics', verbose_name=_("Товар"))
+    name = models.CharField(max_length=100, verbose_name=_("Название характеристики"))
+    value = models.CharField(max_length=255, verbose_name=_("Значение"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+
+    def __str__(self):
+        return f"{self.name}: {self.value}"
+
+    class Meta:
+        verbose_name = _("Характеристика товара")
+        verbose_name_plural = _("Характеристики товаров")
+        ordering = ['name']
 
 
 class ProductImage(models.Model):
@@ -379,6 +429,81 @@ def create_commission(sender, instance, **kwargs):
                 seller.total_sales += item.quantity
                 seller.total_revenue += item.total_price
                 seller.save(update_fields=['total_sales', 'total_revenue'])
+
+
+class Location(models.Model):
+    """Модель локации"""
+    name = models.CharField(max_length=100, verbose_name=_("Название города"))
+    region = models.CharField(max_length=100, blank=True, verbose_name=_("Регион"))
+    country = models.CharField(max_length=100, default='Россия', verbose_name=_("Страна"))
+    latitude = models.FloatField(blank=True, null=True, verbose_name=_("Широта"))
+    longitude = models.FloatField(blank=True, null=True, verbose_name=_("Долгота"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Активна"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    
+    def __str__(self):
+        return f"{self.name}, {self.region}" if self.region else self.name
+    
+    class Meta:
+        verbose_name = _("Локация")
+        verbose_name_plural = _("Локации")
+        ordering = ['name']
+
+
+class UserLocation(models.Model):
+    """Модель локации пользователя"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_locations', verbose_name=_("Пользователь"))
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, verbose_name=_("Локация"))
+    is_auto_detected = models.BooleanField(default=False, verbose_name=_("Автоматически определена"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата установки"))
+
+    def __str__(self):
+        return f"{self.user.username} - {self.location.name}"
+
+    class Meta:
+        verbose_name = _("Локация пользователя")
+        verbose_name_plural = _("Локации пользователей")
+        unique_together = ['user', 'location']
+
+
+class PageCategory(models.Model):
+    """Модель категории страниц"""
+    name = models.CharField(max_length=100, verbose_name=_("Название"))
+    slug = models.SlugField(unique=True, verbose_name=_("URL"))
+    description = models.TextField(blank=True, verbose_name=_("Описание"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Активна"))
+    sort_order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок сортировки"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("Категория страниц")
+        verbose_name_plural = _("Категории страниц")
+        ordering = ['sort_order', 'name']
+
+
+class Page(models.Model):
+    """Модель страницы"""
+    title = models.CharField(max_length=200, verbose_name=_("Заголовок"))
+    slug = models.SlugField(unique=True, verbose_name=_("URL"))
+    content = models.TextField(verbose_name=_("Содержимое"))
+    category = models.ForeignKey(PageCategory, on_delete=models.CASCADE, related_name='pages', verbose_name=_("Категория"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Активна"))
+    is_published = models.BooleanField(default=True, verbose_name=_("Опубликована"))
+    meta_description = models.CharField(max_length=300, blank=True, verbose_name=_("Meta описание"))
+    sort_order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок сортировки"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = _("Страница")
+        verbose_name_plural = _("Страницы")
+        ordering = ['category__sort_order', 'sort_order', 'title']
 
 
 @receiver(post_save, sender=User)

@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from .models import (
     User, Category, Shop, Tag, Product, ProductImage, ProductCharacteristic,
-    Seller, Order, OrderItem, Review, Cart, CartItem, Commission
+    Seller, Order, OrderItem, Review, Cart, CartItem, Commission,
+    Location, UserLocation, PageCategory, Page
 )
 
 
@@ -22,10 +23,29 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'parent', 'is_active', 'created_at')
-    list_filter = ('is_active', 'parent', 'created_at')
-    search_fields = ('name', 'description')
+    list_display = ('name', 'slug', 'parent', 'level', 'sort_order', 'is_active', 'show_in_megamenu', 'created_at')
+    list_filter = ('is_active', 'show_in_megamenu', 'parent', 'created_at')
+    search_fields = ('name', 'description', 'slug')
     prepopulated_fields = {'slug': ('name',)}
+    list_editable = ('sort_order', 'is_active', 'show_in_megamenu')
+    ordering = ('sort_order', 'name')
+    
+    fieldsets = (
+        (_('Основная информация'), {
+            'fields': ('name', 'slug', 'description', 'icon')
+        }),
+        (_('Иерархия'), {
+            'fields': ('parent',)
+        }),
+        (_('Настройки'), {
+            'fields': ('sort_order', 'is_active', 'show_in_megamenu')
+        }),
+    )
+    
+    def level(self, obj):
+        return obj.level
+    level.short_description = _('Уровень')
+    level.admin_order_field = 'parent'
 
 
 @admin.register(Shop)
@@ -146,3 +166,48 @@ class CommissionAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     search_fields = ('seller__company_name', 'order__order_number')
     readonly_fields = ('created_at',)
+
+
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'region', 'country', 'is_active', 'created_at')
+    list_filter = ('is_active', 'country', 'created_at')
+    search_fields = ('name', 'region', 'country')
+    ordering = ('name',)
+
+
+@admin.register(UserLocation)
+class UserLocationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'location', 'is_auto_detected', 'created_at')
+    list_filter = ('is_auto_detected', 'created_at')
+    search_fields = ('user__username', 'location__name')
+    ordering = ('-created_at',)
+
+
+@admin.register(PageCategory)
+class PageCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'is_active', 'sort_order', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ('sort_order', 'name')
+
+
+@admin.register(Page)
+class PageAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category', 'is_active', 'is_published', 'sort_order', 'updated_at')
+    list_filter = ('is_active', 'is_published', 'category', 'created_at', 'updated_at')
+    search_fields = ('title', 'content', 'meta_description')
+    prepopulated_fields = {'slug': ('title',)}
+    fieldsets = (
+        (_('Основная информация'), {
+            'fields': ('title', 'slug', 'category', 'content')
+        }),
+        (_('SEO'), {
+            'fields': ('meta_description',)
+        }),
+        (_('Статус'), {
+            'fields': ('is_active', 'is_published', 'sort_order')
+        }),
+    )
+    ordering = ('category__sort_order', 'sort_order', 'title')

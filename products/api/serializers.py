@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import Product, Category, Shop, Tag, ProductImage, User, Seller, ProductCharacteristic, Order, OrderItem, Review, Cart, CartItem, Commission
+from ..models import Product, Category, Shop, Tag, ProductImage, User, Seller, ProductCharacteristic, Order, OrderItem, Review, Cart, CartItem, Commission, Location, UserLocation
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -118,4 +118,21 @@ class CommissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Commission
         fields = ['id', 'seller', 'order', 'amount', 'rate', 'created_at']
+        read_only_fields = ['created_at']
+
+
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Location
+        fields = ['id', 'name', 'region', 'country', 'latitude', 'longitude', 'is_active', 'created_at']
+        read_only_fields = ['created_at']
+
+
+class UserLocationSerializer(serializers.ModelSerializer):
+    location = LocationSerializer(read_only=True)
+    location_id = serializers.PrimaryKeyRelatedField(queryset=Location.objects.filter(is_active=True), source='location', write_only=True)
+    
+    class Meta:
+        model = UserLocation
+        fields = ['id', 'location', 'location_id', 'is_auto_detected', 'created_at']
         read_only_fields = ['created_at']

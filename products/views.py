@@ -18,7 +18,7 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django_filters.views import FilterView
 from .filters import ProductFilter # Этот файл еще не создан, но будет создан позже
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm
-from .models import Product, Category, Shop, Tag, ProductImage, User
+from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page
 from .services.product_service import ProductService # Импортируем сервис
 from django.forms import inlineformset_factory
 
@@ -89,9 +89,18 @@ def index(request):
     page_number = request.GET.get('page')
     products = paginator.get_page(page_number)
     
+    # Получаем корневые категории для мегаменю
+    root_categories = Category.objects.filter(
+        parent__isnull=True, 
+        is_active=True, 
+        show_in_megamenu=True
+    ).order_by('sort_order', 'name')
+    
     context = {
         'products': products,
         'categories': categories,
+        'root_categories': root_categories,
+        'catalog_categories': root_categories,  # Для мегаменю
         'search_query': search_query,
     }
     return render(request, 'index_ozon.html', context)
@@ -417,3 +426,48 @@ def product_filter_ajax(request):
 
     html = render_to_string('products/includes/product_list.html', {'page_obj': page_obj}, request=request)
     return JsonResponse({'html': html, 'has_next': page_obj.has_next()})
+
+
+# View для тестирования локации
+def test_location_view(request):
+    """Тестовая страница для проверки работы локации"""
+    locations = Location.objects.filter(is_active=True)
+    current_location = getattr(request, 'user_location', None)
+
+    context = {
+        'locations': locations,
+        'current_location': current_location,
+    }
+    return render(request, 'test_location.html', context)
+
+
+def page_list_view(request, category_slug=None):
+    """Список страниц по категориям"""
+    categories = PageCategory.objects.filter(is_active=True)
+    
+    if category_slug:
+        category = get_object_or_404(PageCategory, slug=category_slug, is_active=True)
+        pages = Page.objects.filter(category=category, is_active=True, is_published=True)
+        context = {
+            'category': category,
+            'pages': pages,
+            'categories': categories,
+        }
+        return render(request, 'pages/category.html', context)
+    else:
+        context = {
+            'categories': categories,
+        }
+        return render(request, 'pages/index.html', context)
+
+
+def page_detail_view(request, slug):
+    """Детальная страница"""
+    page = get_object_or_404(Page, slug=slug, is_active=True, is_published=True)
+    categories = PageCategory.objects.filter(is_active=True)
+    
+    context = {
+        'page': page,
+        'categories': categories,
+    }
+    return render(request, 'pages/detail.html', context)

@@ -1,0 +1,84 @@
+{% extends 'base_ozon.html' %}
+
+{% block title %}{{ category.name }} - OZON{% endblock %}
+
+{% block content %}
+<div class="bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Breadcrumbs -->
+        <nav class="flex mb-6" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="/" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-home mr-2"></i>
+                        Главная
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <a href="{% url 'pages' %}" class="text-sm font-medium text-gray-700 hover:text-blue-600">
+                            Информация
+                        </a>
+                    </div>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <span class="text-sm font-medium text-gray-500">{{ category.name }}</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Category Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ category.name }}</h1>
+            {% if category.description %}
+            <p class="text-lg text-gray-600">{{ category.description }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Pages Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for page in pages %}
+            <a href="{% url 'page_detail' page.slug %}" class="group block p-6 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all">
+                <div class="flex items-start justify-between mb-3">
+                    <h3 class="text-lg font-semibold text-gray-900 group-hover:text-blue-600">{{ page.title }}</h3>
+                    <i class="fas fa-arrow-right text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"></i>
+                </div>
+                {% if page.meta_description %}
+                <p class="text-sm text-gray-600 mb-3">{{ page.meta_description|truncatechars:120 }}</p>
+                {% endif %}
+                <div class="flex items-center text-xs text-gray-500">
+                    <span>Обновлено {{ page.updated_at|date:"d.m.Y" }}</span>
+                </div>
+            </a>
+            {% empty %}
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-file-alt text-gray-300 text-4xl mb-4"></i>
+                <p class="text-gray-500">В этом разделе пока нет страниц</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Other Categories -->
+        <div class="mt-12 pt-8 border-t border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Другие разделы</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for cat in categories %}
+                    {% if cat.id != category.id %}
+                    <a href="{% url 'pages_category' cat.slug %}" class="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all">
+                        <h4 class="font-medium text-gray-900 mb-2">{{ cat.name }}</h4>
+                        {% if cat.description %}
+                        <p class="text-sm text-gray-600">{{ cat.description|truncatechars:80 }}</p>
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

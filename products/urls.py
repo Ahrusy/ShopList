@@ -23,4 +23,12 @@ urlpatterns = [
     path('cart/remove/<int:item_id>/', cart_views.remove_from_cart, name='remove_from_cart'),
     path('cart/clear/', cart_views.clear_cart, name='clear_cart'),
     path('cart/count/', cart_views.cart_count, name='cart_count'),
+    
+    # Test location URL
+    path('test-location/', views.test_location_view, name='test_location'),
+    
+    # Страницы
+    path('pages/', views.page_list_view, name='pages'),
+    path('pages/<slug:category_slug>/', views.page_list_view, name='pages_category'),
+    path('page/<slug:slug>/', views.page_detail_view, name='page_detail'),
 ]

@@ -1,0 +1,105 @@
+{% extends 'base_ozon.html' %}
+
+{% block title %}Информация - OZON{% endblock %}
+
+{% block content %}
+<div class="bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Breadcrumbs -->
+        <nav class="flex mb-6" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="/" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-home mr-2"></i>
+                        Главная
+                    </a>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <span class="text-sm font-medium text-gray-500">Информация</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Информация</h1>
+            <p class="text-lg text-gray-600">Вся необходимая информация о покупках, доставке, возвратах и партнерстве</p>
+        </div>
+
+        <!-- Categories Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {% for category in categories %}
+            <div class="bg-gray-50 rounded-lg p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                        {% if category.slug == 'buyers' %}
+                            <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                        {% elif category.slug == 'company' %}
+                            <i class="fas fa-building text-blue-600 text-xl"></i>
+                        {% elif category.slug == 'partners' %}
+                            <i class="fas fa-handshake text-blue-600 text-xl"></i>
+                        {% else %}
+                            <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                        {% endif %}
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-900">{{ category.name }}</h2>
+                </div>
+                
+                {% if category.description %}
+                <p class="text-gray-600 mb-4">{{ category.description }}</p>
+                {% endif %}
+
+                <div class="space-y-2">
+                    {% for page in category.pages.all %}
+                        {% if page.is_active and page.is_published %}
+                        <a href="{% url 'page_detail' page.slug %}" class="block text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                            <i class="fas fa-chevron-right text-xs mr-2"></i>
+                            {{ page.title }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <a href="{% url 'pages_category' category.slug %}" class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                        Все страницы раздела →
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-file-alt text-gray-300 text-4xl mb-4"></i>
+                <p class="text-gray-500">Разделы информации пока не созданы</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Quick Links -->
+        <div class="mt-12 bg-blue-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Популярные вопросы</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a href="{% url 'page_detail' 'how-to-order' %}" class="flex items-center p-3 bg-white rounded-lg hover:shadow-md transition-shadow">
+                    <i class="fas fa-question-circle text-blue-600 mr-3"></i>
+                    <span class="text-gray-900">Как сделать заказ?</span>
+                </a>
+                <a href="{% url 'page_detail' 'delivery' %}" class="flex items-center p-3 bg-white rounded-lg hover:shadow-md transition-shadow">
+                    <i class="fas fa-truck text-blue-600 mr-3"></i>
+                    <span class="text-gray-900">Способы доставки</span>
+                </a>
+                <a href="{% url 'page_detail' 'payment-methods' %}" class="flex items-center p-3 bg-white rounded-lg hover:shadow-md transition-shadow">
+                    <i class="fas fa-credit-card text-blue-600 mr-3"></i>
+                    <span class="text-gray-900">Способы оплаты</span>
+                </a>
+                <a href="{% url 'page_detail' 'returns' %}" class="flex items-center p-3 bg-white rounded-lg hover:shadow-md transition-shadow">
+                    <i class="fas fa-undo text-blue-600 mr-3"></i>
+                    <span class="text-gray-900">Возврат товара</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

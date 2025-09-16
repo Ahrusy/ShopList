@@ -1,8 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{% csrf_token %}">
     <title>{% block title %}Ozon - интернет-магазин{% endblock %}</title>
     
     <!-- Tailwind CSS -->
@@ -74,21 +76,104 @@
             font-size: 12px;
             font-weight: bold;
         }
+        
+        /* Mega menu styles */
+        .mega-menu {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            width: 100vw;
+            max-width: 1200px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            padding: 20px;
+        }
+        .mega-menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 20px;
+        }
+        .mega-menu-category {
+            margin-bottom: 15px;
+        }
+        .mega-menu-category h3 {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .mega-menu-subcategory {
+            padding: 5px 0;
+        }
+        .mega-menu-subcategory a {
+            color: #4b5563;
+            transition: color 0.2s;
+        }
+        .mega-menu-subcategory a:hover {
+            color: #005BFF;
+        }
+        
+        /* Mobile menu button */
+        .mobile-menu-btn {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            .desktop-menu {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <!-- Top Bar -->
-        <div class="bg-gray-100 py-2">
+        <div class="bg-gray-50 py-2 border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center text-sm text-gray-600">
-                    <div class="flex items-center space-x-4">
-                        <span><i class="fas fa-map-marker-alt mr-1"></i>Москва</span>
-                        <span><i class="fas fa-phone mr-1"></i>8 800 234-56-78</span>
+                    <div class="flex items-center space-x-6">
+                        <div class="relative group">
+                            <div class="flex items-center space-x-1 cursor-pointer hover:text-blue-600" onclick="toggleLocationDropdown()">
+                                <i class="fas fa-map-marker-alt text-blue-600"></i>
+                                <span id="currentLocation" class="font-medium">Москва</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </div>
+                            
+                            <!-- Выпадающий список локаций -->
+                            <div id="locationDropdown" class="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 hidden">
+                                <div class="p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="text-sm font-medium text-gray-900">Выберите город</h3>
+                                        <button id="refreshLocation" class="text-blue-600 hover:text-blue-800 text-xs" title="Определить автоматически">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                    <select id="locationSelect" class="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Загрузка...</option>
+                                    </select>
+                                    <div class="mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Мы автоматически определили ваш город
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="flex items-center">
+                            <i class="fas fa-phone mr-1 text-blue-600"></i>
+                            8 800 234-56-78
+                        </span>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <a href="#" class="hover:text-blue-600">Помощь</a>
+                    <div class="flex items-center space-x-6">
+                        <a href="{% url 'pages' %}" class="hover:text-blue-600">Информация</a>
                         <a href="#" class="hover:text-blue-600">Отследить заказ</a>
                         <a href="#" class="hover:text-blue-600">Войти</a>
                     </div>
@@ -97,13 +182,71 @@
         </div>
 
         <!-- Main Header -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div class="flex items-center justify-between">
-                <!-- Logo -->
-                <div class="flex items-center">
-                    <a href="/" class="text-3xl font-bold ozon-gradient bg-clip-text text-transparent">
+                <!-- Logo and Catalog -->
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-2xl font-bold text-blue-600 hover:text-blue-700">
                         OZON
                     </a>
+                    
+                    <!-- Catalog Button -->
+                    <div class="relative group">
+                        <button id="catalogButton" class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-bars"></i>
+                            <span>Каталог</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        
+                        <!-- Mega Menu -->
+                        <div id="catalogMegaMenu" class="absolute top-full left-0 mt-1 w-screen max-w-7xl bg-white border border-gray-200 rounded-lg shadow-2xl z-50 hidden">
+                            <div class="flex h-[500px]">
+                                <!-- Left Sidebar - Categories -->
+                                <div class="w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto">
+                                    <div class="p-4">
+                                        <div class="mb-4">
+                                            <div class="relative">
+                                                <input type="text" id="catalogSearch" placeholder="Поиск по каталогу..." class="w-full p-3 pl-10 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                        <ul class="space-y-1">
+                                            {% for category in catalog_categories %}
+                                                <li>
+                                                    <a href="#" class="catalog-category-link flex items-center p-3 text-sm hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors group" data-category-id="{{ category.id }}">
+                                                        {% if category.icon %}
+                                                            <i class="{{ category.icon }} mr-3 text-gray-600 w-5 group-hover:text-blue-600"></i>
+                                                        {% endif %}
+                                                        <span class="font-medium">{{ category.name }}</span>
+                                                        <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-blue-600"></i>
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <!-- Right Content - Subcategories -->
+                                <div class="flex-1 overflow-y-auto bg-white">
+                                    <div class="p-8">
+                                        <div class="flex items-center justify-between mb-8">
+                                            <h2 id="categoryTitle" class="text-3xl font-bold text-gray-900">Выберите категорию</h2>
+                                            <button id="closeCatalog" class="text-gray-400 hover:text-gray-600 text-3xl p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <div id="categoryContent" class="space-y-8">
+                                            <div class="text-center text-gray-500 py-16">
+                                                <i class="fas fa-mouse-pointer text-6xl mb-6 text-gray-300"></i>
+                                                <p class="text-lg">Выберите категорию слева для просмотра подкатегорий</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Search -->
@@ -115,24 +258,24 @@
                                 name="q" 
                                 placeholder="Поиск товаров"
                                 value="{{ search_query|default:'' }}"
-                                class="search-input flex-1 px-4 py-3 text-lg border-2 border-blue-500 focus:outline-none focus:border-blue-600"
+                                class="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
-                            <button type="submit" class="search-btn px-6 py-3 text-white hover:bg-blue-600 transition-colors">
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition-colors">
                                 <i class="fas fa-search"></i>
                             </button>
                         </form>
                     </div>
                 </div>
 
+
                 <!-- Cart -->
-                <div class="flex items-center space-x-6">
-                    <a href="/cart/" class="relative flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
-                        <i class="fas fa-shopping-cart text-2xl"></i>
-                        <span class="hidden sm:block">Корзина</span>
-                        <span id="cart-counter" class="cart-counter">0</span>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'cart' %}" class="relative flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span class="cart-counter bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full" id="cart-counter">0</span>
                     </a>
                     <a href="#" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
-                        <i class="fas fa-heart text-2xl"></i>
+                        <i class="fas fa-heart text-xl"></i>
                         <span class="hidden sm:block">Избранное</span>
                     </a>
                 </div>
@@ -174,19 +317,25 @@
                 <div>
                     <h4 class="font-semibold mb-4">Покупателям</h4>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">Как сделать заказ</a></li>
-                        <li><a href="#" class="hover:text-white">Способы оплаты</a></li>
-                        <li><a href="#" class="hover:text-white">Доставка</a></li>
-                        <li><a href="#" class="hover:text-white">Возврат товара</a></li>
+                        <li><a href="{% url 'page_detail' 'how-to-order' %}" class="hover:text-white">Как сделать заказ</a></li>
+                        <li><a href="{% url 'page_detail' 'payment-methods' %}" class="hover:text-white">Способы оплаты</a></li>
+                        <li><a href="{% url 'page_detail' 'delivery' %}" class="hover:text-white">Доставка</a></li>
+                        <li><a href="{% url 'page_detail' 'returns' %}" class="hover:text-white">Возврат товара</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-4">Компания</h4>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">О нас</a></li>
-                        <li><a href="#" class="hover:text-white">Вакансии</a></li>
-                        <li><a href="#" class="hover:text-white">Контакты</a></li>
-                        <li><a href="#" class="hover:text-white">Партнерам</a></li>
+                        <li><a href="{% url 'page_detail' 'about' %}" class="hover:text-white">О нас</a></li>
+                        <li><a href="{% url 'page_detail' 'careers' %}" class="hover:text-white">Вакансии</a></li>
+                        <li><a href="{% url 'page_detail' 'contacts' %}" class="hover:text-white">Контакты</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Партнерам</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{% url 'page_detail' 'sell-on-ozon' %}" class="hover:text-white">Продавайте на OZON</a></li>
+                        <li><a href="{% url 'page_detail' 'advertising' %}" class="hover:text-white">Реклама на OZON</a></li>
                     </ul>
                 </div>
                 <div>
@@ -213,14 +362,33 @@
 
     <!-- Scripts -->
     <script>
+        // Get CSRF token from meta tag
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                   document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                   getCookie('csrftoken');
+        }
+
         // Load cart count
         function loadCartCount() {
-            fetch('/cart/count/')
-                .then(response => response.json())
+            fetch('/cart/count/', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     document.getElementById('cart-counter').textContent = data.count || 0;
                 })
-                .catch(error => console.error('Error loading cart count:', error));
+                .catch(error => {
+                    console.error('Error loading cart count:', error);
+                    document.getElementById('cart-counter').textContent = '0';
+                });
         }
 
         // Add to cart
@@ -229,18 +397,31 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({ quantity: quantity })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.status === 401) {
+                    // User not authenticated, redirect to login
+                    window.location.href = '/accounts/login/';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.success) {
+                if (data && data.success) {
                     showNotification(data.message, 'success');
                     loadCartCount();
                     animateCartCounter();
-                } else {
-                    showNotification(data.message, 'error');
+                } else if (data && data.redirect) {
+                    // Redirect to login page
+                    window.location.href = data.redirect;
+                } else if (data) {
+                    showNotification(data.message || 'Ошибка при добавлении в корзину', 'error');
                 }
             })
             .catch(error => {
@@ -294,6 +475,42 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadCartCount();
         });
+
+        // Location dropdown functions
+        function toggleLocationDropdown() {
+            const dropdown = document.getElementById('locationDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('locationDropdown');
+            const locationTrigger = event.target.closest('.relative.group');
+            
+            if (!locationTrigger && !dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+            }
+        });
     </script>
+    
+    <!-- Location management script -->
+    <script src="{% static 'js/location.js' %}"></script>
+    
+    <!-- Catalog data -->
+    <script>
+        console.log('Catalog categories count:', {{ catalog_categories|length }});
+        window.catalogData = {
+            {% for category in catalog_categories %}
+            {{ category.id }}: {
+                name: "{{ category.name|escapejs }}",
+                icon: "{{ category.icon|escapejs }}",
+                subcategories: []
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+        console.log('Catalog data loaded:', window.catalogData);
+    </script>
+    
+    <script src="{% static 'js/catalog.js' %}"></script>
 </body>
 </html>

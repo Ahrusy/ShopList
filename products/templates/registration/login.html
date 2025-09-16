@@ -1,6 +1,6 @@
 {% extends 'base_ozon.html' %}
 
-{% block title %}Регистрация - Ozon{% endblock %}
+{% block title %}Вход в аккаунт - Ozon{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -11,12 +11,12 @@
             </div>
         </div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Создать аккаунт
+            Вход в аккаунт
         </h2>
         <p class="mt-2 text-center text-sm text-gray-600">
             Или
-            <a href="{% url 'login' %}" class="font-medium text-blue-600 hover:text-blue-500">
-                войдите в существующий аккаунт
+            <a href="{% url 'register' %}" class="font-medium text-blue-600 hover:text-blue-500">
+                создайте новый аккаунт
             </a>
         </p>
     </div>
@@ -42,7 +42,7 @@
                                type="text" 
                                value="{{ form.username.value|default:'' }}"
                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm {% if form.username.errors %}border-red-300{% endif %}"
-                               placeholder="Введите логин">
+                               placeholder="Введите логин или email">
                         {% if form.username.errors %}
                             <div class="mt-1 text-sm text-red-600">
                                 {{ form.username.errors }}
@@ -52,57 +52,35 @@
                 </div>
 
                 <div>
-                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ form.email.label }}
+                    <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.password.label }}
                     </label>
                     <div class="mt-1">
-                        <input id="{{ form.email.id_for_label }}" 
-                               name="{{ form.email.name }}" 
-                               type="email" 
-                               value="{{ form.email.value|default:'' }}"
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm {% if form.email.errors %}border-red-300{% endif %}"
-                               placeholder="Введите email">
-                        {% if form.email.errors %}
-                            <div class="mt-1 text-sm text-red-600">
-                                {{ form.email.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div>
-                    <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ form.password1.label }}
-                    </label>
-                    <div class="mt-1">
-                        <input id="{{ form.password1.id_for_label }}" 
-                               name="{{ form.password1.name }}" 
+                        <input id="{{ form.password.id_for_label }}" 
+                               name="{{ form.password.name }}" 
                                type="password" 
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm {% if form.password1.errors %}border-red-300{% endif %}"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm {% if form.password.errors %}border-red-300{% endif %}"
                                placeholder="Введите пароль">
-                        {% if form.password1.errors %}
+                        {% if form.password.errors %}
                             <div class="mt-1 text-sm text-red-600">
-                                {{ form.password1.errors }}
+                                {{ form.password.errors }}
                             </div>
                         {% endif %}
                     </div>
                 </div>
 
-                <div>
-                    <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ form.password2.label }}
-                    </label>
-                    <div class="mt-1">
-                        <input id="{{ form.password2.id_for_label }}" 
-                               name="{{ form.password2.name }}" 
-                               type="password" 
-                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm {% if form.password2.errors %}border-red-300{% endif %}"
-                               placeholder="Подтвердите пароль">
-                        {% if form.password2.errors %}
-                            <div class="mt-1 text-sm text-red-600">
-                                {{ form.password2.errors }}
-                            </div>
-                        {% endif %}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                            Запомнить меня
+                        </label>
+                    </div>
+
+                    <div class="text-sm">
+                        <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
+                            Забыли пароль?
+                        </a>
                     </div>
                 </div>
 
@@ -110,10 +88,10 @@
                     <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ozon-gradient hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
                         <span class="absolute left-0 inset-y-0 flex items-center pl-3">
                             <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                             </svg>
                         </span>
-                        Зарегистрироваться
+                        Войти
                     </button>
                 </div>
             </form>
@@ -124,7 +102,7 @@
                         <div class="w-full border-t border-gray-300" />
                     </div>
                     <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">Или зарегистрируйтесь через</span>
+                        <span class="px-2 bg-white text-gray-500">Или войдите через</span>
                     </div>
                 </div>
 

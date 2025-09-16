@@ -1,0 +1,84 @@
+{% extends 'base_ozon.html' %}
+{% load static %}
+
+{% block title %}Тест локации{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Тест системы локации</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Текущая локация</h2>
+        {% if current_location %}
+            <div class="flex items-center space-x-2 text-green-600">
+                <i class="fas fa-map-marker-alt"></i>
+                <span class="font-medium">{{ current_location.name }}{% if current_location.region %}, {{ current_location.region }}{% endif %}</span>
+            </div>
+            <div class="mt-2 text-sm text-gray-600">
+                <p><strong>Страна:</strong> {{ current_location.country }}</p>
+                {% if current_location.latitude and current_location.longitude %}
+                    <p><strong>Координаты:</strong> {{ current_location.latitude }}, {{ current_location.longitude }}</p>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="text-red-600">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                Локация не определена
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Доступные локации</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for location in locations %}
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i class="fas fa-map-marker-alt text-blue-500"></i>
+                        <span class="font-medium">{{ location.name }}</span>
+                    </div>
+                    {% if location.region %}
+                        <p class="text-sm text-gray-600">{{ location.region }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500">{{ location.country }}</p>
+                    {% if location.latitude and location.longitude %}
+                        <p class="text-xs text-gray-400">{{ location.latitude }}, {{ location.longitude }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Тестирование API</h2>
+        <div class="space-y-4">
+            <div>
+                <h3 class="font-medium mb-2">Получить все локации:</h3>
+                <code class="bg-gray-100 p-2 rounded text-sm block">GET /api/locations/</code>
+            </div>
+            <div>
+                <h3 class="font-medium mb-2">Получить текущую локацию пользователя:</h3>
+                <code class="bg-gray-100 p-2 rounded text-sm block">GET /api/user-locations/current/</code>
+            </div>
+            <div>
+                <h3 class="font-medium mb-2">Установить локацию:</h3>
+                <code class="bg-gray-100 p-2 rounded text-sm block">POST /api/user-locations/set_location/</code>
+                <p class="text-sm text-gray-600 mt-1">Body: {"location_id": 1, "is_auto_detected": false}</p>
+            </div>
+            <div>
+                <h3 class="font-medium mb-2">Автоматическое определение локации:</h3>
+                <code class="bg-gray-100 p-2 rounded text-sm block">POST /api/user-locations/detect_location/</code>
+                <p class="text-sm text-gray-600 mt-1">Body: {"latitude": 55.7558, "longitude": 37.6176}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-6 text-center">
+        <a href="{% url 'index' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Вернуться на главную
+        </a>
+    </div>
+</div>
+{% endblock %}
+

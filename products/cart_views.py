@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from .models import Cart, CartItem, Product
 from django.utils.translation import gettext_lazy as _
@@ -25,11 +26,20 @@ def cart_view(request):
     return render(request, 'cart.html', context)
 
 
+@csrf_exempt
 @require_POST
 def add_to_cart(request, product_id):
     """Добавить товар в корзину"""
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'Необходимо войти в систему'})
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False, 
+                'message': 'Необходимо войти в систему',
+                'redirect': '/accounts/login/'
+            }, status=401)
+        else:
+            messages.error(request, 'Необходимо войти в систему')
+            return redirect('login')
     
     product = get_object_or_404(Product, id=product_id)
     
@@ -77,11 +87,20 @@ def add_to_cart(request, product_id):
         return redirect('cart')
 
 
+@csrf_exempt
 @require_POST
 def update_cart_item(request, item_id):
     """Обновить количество товара в корзине"""
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'Необходимо войти в систему'})
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False, 
+                'message': 'Необходимо войти в систему',
+                'redirect': '/accounts/login/'
+            }, status=401)
+        else:
+            messages.error(request, 'Необходимо войти в систему')
+            return redirect('login')
     
     cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     
@@ -123,11 +142,20 @@ def update_cart_item(request, item_id):
         return redirect('cart')
 
 
+@csrf_exempt
 @require_POST
 def remove_from_cart(request, item_id):
     """Удалить товар из корзины"""
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'Необходимо войти в систему'})
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False, 
+                'message': 'Необходимо войти в систему',
+                'redirect': '/accounts/login/'
+            }, status=401)
+        else:
+            messages.error(request, 'Необходимо войти в систему')
+            return redirect('login')
     
     cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     product_name = cart_item.product.name
@@ -149,11 +177,20 @@ def remove_from_cart(request, item_id):
         return redirect('cart')
 
 
+@csrf_exempt
 @require_POST
 def clear_cart(request):
     """Очистить корзину"""
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'Необходимо войти в систему'})
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False, 
+                'message': 'Необходимо войти в систему',
+                'redirect': '/accounts/login/'
+            }, status=401)
+        else:
+            messages.error(request, 'Необходимо войти в систему')
+            return redirect('login')
     
     cart = get_object_or_404(Cart, user=request.user)
     cart.items.all().delete()
