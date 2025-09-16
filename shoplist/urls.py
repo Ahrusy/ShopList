@@ -69,6 +69,8 @@ urlpatterns += i18n_patterns(
     path('pages/<str:slug>/', page_detail_view, name='page_detail'),
     # Аутентификация теперь в products.urls.auth_urls
     path('auth/', include('products.urls.auth_urls')),
+    # Избранное
+    path('favorites/', include('products.urls.favorite_urls')),
     # Редиректы для старых URL-ов
     path('register/', lambda request: redirect('/ru/auth/register/'), name='old_register'),
     path('login/', lambda request: redirect('/ru/auth/login/'), name='old_login'),
