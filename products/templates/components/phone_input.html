@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function sendSms() {
         const phone = '+7' + phoneInput.value;
         
-        fetch('/api/auth/send-sms/', {
+        fetch('/ru/auth/api/send-sms/', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken'),

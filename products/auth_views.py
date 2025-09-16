@@ -82,7 +82,7 @@ def register_view(request):
     if request.method == 'POST':
         return handle_registration(request)
     
-    return render(request, 'auth/register.html')
+    return render(request, 'auth/register.html', {'form': None})
 
 
 def handle_registration(request):
@@ -206,7 +206,7 @@ def login_view(request):
     if request.method == 'POST':
         return handle_login(request)
     
-    return render(request, 'auth/login.html')
+    return render(request, 'auth/login.html', {'form': None})
 
 
 def handle_login(request):

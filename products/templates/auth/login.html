@@ -5,200 +5,204 @@
 {% block title %}Вход - ShopList{% endblock %}
 
 {% block content %}
-{% include 'components/auth_base.html' with 
-    title="Войти в аккаунт" 
-    subtitle="Войдите, чтобы продолжить покупки"
-    show_social_auth=True
-    submit_text="Войти"
-    divider_text="Нет аккаунта?"
-%}
-
-{% block form_content %}
-<!-- Переключатель способов входа -->
-<div class="mb-6">
-    <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-        <button type="button" 
-                id="phoneTab" 
-                class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors bg-white text-blue-600 shadow-sm">
-            <i class="fas fa-mobile-alt mr-2"></i>Телефон
-        </button>
-        <button type="button" 
-                id="emailTab" 
-                class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700">
-            <i class="fas fa-envelope mr-2"></i>Email
-        </button>
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <!-- Логотип -->
+        <div class="flex justify-center">
+            <a href="/" class="text-3xl font-bold text-blue-600 hover:text-blue-700">
+                ShopList
+            </a>
+        </div>
+        
+        <!-- Заголовок -->
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Войти в аккаунт
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+            Войдите, чтобы продолжить покупки
+        </p>
     </div>
-</div>
 
-<!-- Вход по телефону -->
-<div id="phoneLogin" class="login-method">
-    {% include 'components/phone_input.html' %}
-</div>
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <form class="space-y-6" action="{% url 'auth:login' %}" method="POST">
+                {% csrf_token %}
+                
+                <!-- Переключатель способов входа -->
+                <div class="flex justify-center mb-6">
+                    <button type="button" id="phoneTab" class="px-4 py-2 text-sm font-medium rounded-l-md focus:outline-none transition-colors duration-200 bg-blue-600 text-white">
+                        {% trans "По телефону" %}
+                    </button>
+                    <button type="button" id="emailTab" class="px-4 py-2 text-sm font-medium rounded-r-md focus:outline-none transition-colors duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                        {% trans "По почте" %}
+                    </button>
+                </div>
 
-<!-- Вход по email -->
-<div id="emailLogin" class="login-method hidden">
-    <div class="space-y-4">
-        <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
-                Email адрес
-            </label>
-            <input type="email" 
-                   id="email" 
-                   name="email" 
-                   class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                   placeholder="example@email.com"
-                   required>
-        </div>
-        
-        <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
-                Пароль
-            </label>
-            <div class="mt-1 relative">
-                <input type="password" 
-                       id="password" 
-                       name="password" 
-                       class="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                       placeholder="Введите пароль"
-                       required>
-                <button type="button" 
-                        class="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        onclick="togglePassword('password')">
-                    <i class="fas fa-eye text-gray-400 hover:text-gray-600"></i>
-                </button>
+                <div id="phoneFields">
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700">{% trans "Номер телефона" %}</label>
+                        <div class="mt-1">
+                            <input type="tel" id="phone" name="phone" required
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   placeholder="+7 (999) 123-45-67">
+                        </div>
+                    </div>
+                    
+                    <div id="smsCodeField" class="hidden">
+                        <label for="sms_code" class="block text-sm font-medium text-gray-700">{% trans "Код из СМС" %}</label>
+                        <div class="mt-1">
+                            <input type="text" id="sms_code" name="sms_code"
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   placeholder="Введите код">
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="sendSmsBtn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                        {% trans "Получить код по СМС" %}
+                    </button>
+                </div>
+
+                <div id="emailFields" class="hidden">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">{% trans "Email адрес" %}</label>
+                        <div class="mt-1">
+                            <input id="email" name="email" type="email" autocomplete="email" required
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">{% trans "Пароль" %}</label>
+                        <div class="mt-1">
+                            <input id="password" name="password" type="password" autocomplete="current-password" required
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember_me" name="remember_me" type="checkbox"
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="remember_me" class="ml-2 block text-sm text-gray-900">
+                            {% trans "Запомнить меня" %}
+                        </label>
+                    </div>
+
+                    <div class="text-sm">
+                        <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
+                            {% trans "Забыли пароль?" %}
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Войти" %}
+                    </button>
+                </div>
+            </form>
+
+            <!-- Скрытые поля для определения метода входа -->
+            <input type="hidden" id="login_method" name="login_method" value="phone">
+
+            <!-- Социальные сети -->
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">
+                            {% trans "Или продолжить с" %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-3 gap-3">
+                    <div>
+                        <a href="#" class="w-full flex items-center justify-center px-8 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <img class="h-5 w-5" src="https://www.svgrepo.com/show/506496/google.svg" alt="Google">
+                        </a>
+                    </div>
+                    <div>
+                        <a href="#" class="w-full flex items-center justify-center px-8 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <img class="h-5 w-5" src="https://www.svgrepo.com/show/506497/yandex.svg" alt="Yandex">
+                        </a>
+                    </div>
+                    <div>
+                        <a href="#" class="w-full flex items-center justify-center px-8 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <img class="h-5 w-5" src="https://www.svgrepo.com/show/506498/vk.svg" alt="VK">
+                        </a>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <!-- Запомнить меня и забыли пароль -->
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <input id="remember_me" 
-                       name="remember_me" 
-                       type="checkbox" 
-                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                <label for="remember_me" class="ml-2 block text-sm text-gray-700">
-                    Запомнить меня
-                </label>
-            </div>
-            
-            <div class="text-sm">
-                <a href="{% url 'password_reset' %}" class="font-medium text-blue-600 hover:text-blue-500">
-                    Забыли пароль?
+
+            <div class="mt-6 text-center text-sm">
+                <a href="{% url 'auth:register' %}" class="font-medium text-blue-600 hover:text-blue-500">
+                    {% trans "Создать аккаунт" %}
                 </a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Скрытые поля для определения метода входа -->
-<input type="hidden" id="login_method" name="login_method" value="phone">
-{% endblock %}
-
-{% block additional_links %}
-<a href="{% url 'auth:register' %}" class="font-medium text-blue-600 hover:text-blue-500">
-    Создать аккаунт
-</a>
-{% endblock %}
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const phoneTab = document.getElementById('phoneTab');
     const emailTab = document.getElementById('emailTab');
-    const phoneLogin = document.getElementById('phoneLogin');
-    const emailLogin = document.getElementById('emailLogin');
+    const phoneFields = document.getElementById('phoneFields');
+    const emailFields = document.getElementById('emailFields');
     const loginMethod = document.getElementById('login_method');
+    const sendSmsBtn = document.getElementById('sendSmsBtn');
+    const smsCodeField = document.getElementById('smsCodeField');
 
-    phoneTab.addEventListener('click', function() {
-        // Переключаем табы
-        phoneTab.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
-        phoneTab.classList.remove('text-gray-500', 'hover:text-gray-700');
-        emailTab.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
-        emailTab.classList.add('text-gray-500', 'hover:text-gray-700');
-        
-        // Переключаем контент
-        phoneLogin.classList.remove('hidden');
-        emailLogin.classList.add('hidden');
-        
-        // Устанавливаем метод
-        loginMethod.value = 'phone';
-    });
-
-    emailTab.addEventListener('click', function() {
-        // Переключаем табы
-        emailTab.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
-        emailTab.classList.remove('text-gray-500', 'hover:text-gray-700');
-        phoneTab.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
-        phoneTab.classList.add('text-gray-500', 'hover:text-gray-700');
-        
-        // Переключаем контент
-        emailLogin.classList.remove('hidden');
-        phoneLogin.classList.add('hidden');
-        
-        // Устанавливаем метод
-        loginMethod.value = 'email';
-    });
-
-    // Валидация формы
-    document.getElementById('authForm').addEventListener('submit', function(e) {
-        const method = loginMethod.value;
-        
+    function switchTab(method) {
         if (method === 'phone') {
-            const phone = document.getElementById('phone').value;
-            const smsCode = document.getElementById('sms_code').value;
-            
-            if (phone.length !== 10) {
-                e.preventDefault();
-                showNotification('Введите корректный номер телефона', 'error');
-                return;
-            }
-            
-            if (!smsCode || smsCode.length !== 6) {
-                e.preventDefault();
-                showNotification('Введите код подтверждения', 'error');
-                return;
-            }
+            phoneTab.classList.add('bg-blue-600', 'text-white');
+            phoneTab.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            emailTab.classList.remove('bg-blue-600', 'text-white');
+            emailTab.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            phoneFields.classList.remove('hidden');
+            emailFields.classList.add('hidden');
+            loginMethod.value = 'phone';
         } else {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            if (!email || !password) {
-                e.preventDefault();
-                showNotification('Заполните все поля', 'error');
-                return;
-            }
+            emailTab.classList.add('bg-blue-600', 'text-white');
+            emailTab.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            phoneTab.classList.remove('bg-blue-600', 'text-white');
+            phoneTab.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            emailFields.classList.remove('hidden');
+            phoneFields.classList.add('hidden');
+            loginMethod.value = 'email';
         }
+    }
+
+    phoneTab.addEventListener('click', () => switchTab('phone'));
+    emailTab.addEventListener('click', () => switchTab('email'));
+
+    // Initialize tab
+    switchTab('phone');
+
+    // SMS functionality
+    sendSmsBtn.addEventListener('click', function() {
+        const phone = document.getElementById('phone').value;
+        if (!phone) {
+            alert('{% trans "Пожалуйста, введите номер телефона." %}');
+            return;
+        }
+
+        // Show SMS code field
+        smsCodeField.classList.remove('hidden');
+        
+        // Disable button temporarily
+        sendSmsBtn.disabled = true;
+        sendSmsBtn.textContent = '{% trans "Код отправлен" %}';
+        
+        setTimeout(() => {
+            sendSmsBtn.disabled = false;
+            sendSmsBtn.textContent = '{% trans "Получить код по СМС" %}';
+        }, 30000);
     });
 });
-
-function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const icon = field.nextElementSibling.querySelector('i');
-    
-    if (field.type === 'password') {
-        field.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-    } else {
-        field.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-    }
-}
-
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
-        type === 'success' ? 'bg-green-500 text-white' : 
-        type === 'error' ? 'bg-red-500 text-white' : 
-        'bg-blue-500 text-white'
-    }`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
 </script>
 {% endblock %}
