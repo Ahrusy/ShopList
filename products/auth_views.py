@@ -13,7 +13,7 @@ from django.conf import settings
 import json
 import re
 import random
-from ..models import User
+from .models import User
 import logging
 
 logger = logging.getLogger(__name__)

@@ -3,8 +3,6 @@ from . import views
 from . import cart_views, review_views, notification_views, analytics_views, promo_views
 
 urlpatterns = [
-    # Аутентификация
-    path('auth/', include('products.urls.auth_urls')),
     path('accounts/', include('django.contrib.auth.urls')), # Встроенные URL-адреса Django для аутентификации
     path('', views.index, name='index'),
     path('category/<str:category_slug>/', views.category_view, name='category'),

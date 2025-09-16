@@ -1,6 +1,6 @@
 from django.urls import path
 from django.shortcuts import render
-from ..views.auth_views import (
+from ..auth_views import (
     register_view, 
     login_view, 
     logout_view, 

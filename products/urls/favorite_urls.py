@@ -1,5 +1,5 @@
 from django.urls import path
-from ..views.favorite_views import (
+from ..favorite_views import (
     favorite_list, 
     add_to_favorites, 
     remove_from_favorites, 

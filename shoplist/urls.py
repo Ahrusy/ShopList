@@ -20,7 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls.i18n import i18n_patterns # Для мультиязычности
 from django.views.i18n import set_language # Для смены языка
-from products.views import index, category_view, checkout_view, order_detail_view, order_list_view, register_view, login_view, logout_view, test_location_view, page_list_view, page_detail_view, product_detail
+from products.views import index, category_view, checkout_view, order_detail_view, order_list_view, test_location_view, page_list_view, page_detail_view, product_detail
 from products.api import urls as products_api_urls
 from rest_framework import routers
 from products.api.views import ProductViewSet, CategoryViewSet, OrderViewSet, CartViewSet, UserViewSet, ShopViewSet, TagViewSet, LocationViewSet, UserLocationViewSet
@@ -63,12 +63,11 @@ urlpatterns += i18n_patterns(
     path('checkout/', checkout_view, name='checkout_view'),
     path('orders/', order_list_view, name='order_list'),
     path('orders/<int:order_id>/', order_detail_view, name='order_detail'),
-    path('register/', register_view, name='register'),
-    path('login/', login_view, name='login'),
-    path('logout/', logout_view, name='logout'),
     path('test_location/', test_location_view, name='test_location'),
     path('pages/', page_list_view, name='pages'),
     path('pages/<str:slug>/', page_detail_view, name='page_detail'),
+    # Аутентификация теперь в products.urls.auth_urls
+    path('auth/', include('products.urls.auth_urls')),
 )
 
 if settings.DEBUG:
