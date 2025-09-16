@@ -1,8 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.urls import reverse_lazy
@@ -18,52 +16,12 @@ from decimal import Decimal
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django_filters.views import FilterView
 from .filters import ProductFilter # Этот файл еще не создан, но будет создан позже
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm, OrderForm, OrderItemForm
+from .forms import ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm, OrderForm, OrderItemForm
 from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page, Order, OrderItem, Cart, CartItem
 from .services.product_service import ProductService # Импортируем сервис
 from django.forms import inlineformset_factory
 
-# Аутентификация
-def register_view(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, _(f"Аккаунт {user.username} успешно создан!"))
-            return redirect('index')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'register.html', {'form': form})
-
-def login_view(request):
-    if request.method == 'POST':
-        form = CustomAuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, _(f"Добро пожаловать, {user.username}!"))
-                return redirect('index')
-            else:
-                messages.error(request, _("Неверное имя пользователя или пароль."))
-        else:
-            messages.error(request, _("Неверное имя пользователя или пароль."))
-    else:
-        form = CustomAuthenticationForm()
-    return render(request, 'login.html', {'form': form})
-
-@login_required
-def logout_view(request):
-    logout(request)
-    messages.info(request, _("Вы успешно вышли из системы."))
-    return redirect('index')
+# Аутентификация перенесена в products/views/auth_views.py
 
 # Главная страница и список товаров
 def index(request):
