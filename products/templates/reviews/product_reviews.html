@@ -36,7 +36,7 @@
                             {% if user.is_authenticated %}
                                 <a href="{% url 'add_review' product.id %}" class="btn btn-primary">Написать отзыв</a>
                             {% else %}
-                                <a href="{% url 'login' %}" class="btn btn-outline-primary">Войти для отзыва</a>
+                                <a href="{% url 'auth:login' %}" class="btn btn-outline-primary">Войти для отзыва</a>
                             {% endif %}
                         </div>
                     </div>
