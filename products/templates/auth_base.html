@@ -19,26 +19,53 @@
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Header -->
+    <!-- Top Bar -->
+    <div class="bg-gray-100 text-sm">
+        <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="flex items-center justify-between h-10">
+                <div class="flex items-center space-x-6">
+                    <span class="text-gray-600">Москва</span>
+                    <span class="text-gray-600">8 800 234-56-78</span>
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Магазины</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Категории</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Адреса</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Для менеджеров</a>
+                    <span class="text-gray-600">Центральная ул., 73</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-600">RU</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
     <header class="bg-white shadow-sm">
         <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
             <div class="flex items-center justify-between h-16">
-                <!-- Logo -->
-                <div class="flex items-center">
+                <!-- Left Section -->
+                <div class="flex items-center space-x-6 w-80">
+                    <!-- Logo -->
                     <a href="/" class="text-2xl font-bold text-blue-600 hover:text-blue-700">
                         ShopList
                     </a>
                 </div>
                 
-                <!-- Navigation -->
-                <nav class="hidden md:flex items-center space-x-8">
-                    <a href="/" class="text-gray-700 hover:text-blue-600">Главная</a>
-                    <a href="/ru/categories/" class="text-gray-700 hover:text-blue-600">Категории</a>
-                    <a href="/ru/pages/" class="text-gray-700 hover:text-blue-600">О нас</a>
-                </nav>
+                <!-- Center Section - Search -->
+                <div class="flex-1 max-w-2xl mx-8">
+                    <div class="relative">
+                        <input type="text" 
+                               placeholder="Искать на ShopList" 
+                               class="w-full px-4 py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
                 
-                <!-- User Actions -->
-                <div class="flex items-center space-x-4">
+                <!-- Right Section -->
+                <div class="flex items-center space-x-6 w-80 justify-end">
+                    <!-- User Actions -->
                     {% if user.is_authenticated %}
                         <div class="relative group">
                             <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
@@ -48,18 +75,48 @@
                                 <span class="hidden md:block">{{ user.first_name|default:user.username }}</span>
                             </button>
                         </div>
+                        
+                        <!-- Orders -->
+                        <a href="{% url 'order_list' %}" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-box text-2xl"></i>
+                            <span class="text-xs mt-1">Заказы</span>
+                        </a>
+
+                        <!-- Favorites -->
+                        <a href="#" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-heart text-2xl"></i>
+                            <span class="text-xs mt-1">Избранное</span>
+                        </a>
+
+                        <!-- Cart -->
+                        <a href="{% url 'cart' %}" class="relative flex flex-col items-center text-gray-700 hover:text-blue-600">
+                            <div class="relative">
+                                <i class="fas fa-shopping-cart text-2xl"></i>
+                                <span class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">1</span>
+                            </div>
+                            <span class="text-xs mt-1">Корзина</span>
+                        </a>
                     {% else %}
                         <a href="{% url 'auth:login' %}" class="text-gray-700 hover:text-blue-600">
                             <i class="fas fa-sign-in-alt mr-1"></i>Войти
-                        </a>
-                        <a href="{% url 'auth:register' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                            <i class="fas fa-user-plus mr-1"></i>Регистрация
                         </a>
                     {% endif %}
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- Catalog Button -->
+    <div class="bg-white border-t">
+        <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div class="flex items-center h-12">
+                <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+                    <i class="fas fa-bars"></i>
+                    <span>Каталог</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main>
