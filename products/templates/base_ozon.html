@@ -483,7 +483,7 @@
                         <!-- Карусель категорий -->
                         <div class="flex items-center space-x-6 transition-transform duration-300" id="categoriesCarousel">
                             {% for category in categories %}
-                                <a href="{% url 'category_detail' category.slug %}" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 whitespace-nowrap">
+                                <a href="{% url 'category' category.slug %}" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 whitespace-nowrap">
                                     {% if category.icon %}
                                         <i class="{{ category.icon }} text-blue-600"></i>
                                     {% endif %}
@@ -512,7 +512,7 @@
                 <!-- Карусель категорий -->
                 <div class="flex items-center space-x-6 transition-transform duration-300" id="categoriesCarousel">
                     {% for category in categories %}
-                        <a href="{% url 'category_detail' category.slug %}" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 whitespace-nowrap">
+                        <a href="{% url 'category' category.slug %}" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 whitespace-nowrap">
                             {% if category.icon %}
                                 <i class="{{ category.icon }} text-blue-600"></i>
                             {% endif %}

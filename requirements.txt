@@ -29,6 +29,7 @@ djangorestframework_simplejwt==5.5.1
 drf-spectacular==0.28.0
 factory_boy==3.3.3
 Faker==37.6.0
+fake-useragent==1.5.1
 inflection==0.5.1
 iniconfig==2.1.0
 jsonschema==4.25.1
