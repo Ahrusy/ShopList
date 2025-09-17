@@ -34,13 +34,13 @@
         
         /* Градиентные фоны для элементов интерфейса */
         .topbar-gradient {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important;
         }
         .header-gradient {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
         }
         .footer-gradient {
-            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
         }
         .product-card {
             transition: all 0.3s ease;
@@ -423,9 +423,9 @@
                                 <a href="{% url 'order_list' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
                                     <i class="fas fa-box mr-2"></i>Мои заказы
                                 </a>
-                                <a href="{% url 'favorites:favorite_list' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                    <i class="fas fa-heart mr-2"></i>Избранное
-                                </a>
+                                 <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                     <i class="fas fa-heart mr-2"></i>Избранное
+                                 </a>
                                 <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
                                     <i class="fas fa-cog mr-2"></i>Настройки
                                 </a>

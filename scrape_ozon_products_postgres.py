@@ -17,6 +17,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from django.utils.text import slugify
+import random
+import string
 
 # Настройка логгера
 logging.basicConfig(
@@ -210,48 +213,51 @@ def create_category_hierarchy():
     
     for root_name, root_data in CATEGORIES_STRUCTURE.items():
         # Создаем корневую категорию
+        slug = generate_unique_slug(root_name, Category)
         root_category, created = Category.objects.get_or_create(
             name=root_name,
             defaults={
-                'slug': root_name.lower().replace(" ", "-").replace("и", "i"),
+                'slug': slug,
                 'description': f"Товары категории {root_name} с Ozon",
                 'is_active': True,
                 'created_at': timezone.now()
             }
         )
         if created:
-            logger.info(f"✅ Создана корневая категория: {root_name}")
+            logger.info(f"[OK] Создана корневая категория: {root_name}")
         
         # Создаем подкатегории 2-го уровня
         for sub_name, sub_data in root_data['subcategories'].items():
+            slug = generate_unique_slug(sub_name, Category)
             sub_category, created = Category.objects.get_or_create(
                 name=sub_name,
                 parent=root_category,
                 defaults={
-                    'slug': sub_name.lower().replace(" ", "-").replace("и", "i"),
+                    'slug': slug,
                     'description': f"Товары подкатегории {sub_name}",
                     'is_active': True,
                     'created_at': timezone.now()
                 }
             )
             if created:
-                logger.info(f"✅ Создана подкатегория 2-го уровня: {sub_name}")
+                logger.info(f"[OK] Создана подкатегория 2-го уровня: {sub_name}")
             
             # Создаем подкатегории 3-го уровня
             if 'subcategories' in sub_data:
                 for sub_sub_name, sub_sub_url in sub_data['subcategories'].items():
+                    slug = generate_unique_slug(sub_sub_name, Category)
                     sub_sub_category, created = Category.objects.get_or_create(
                         name=sub_sub_name,
                         parent=sub_category,
                         defaults={
-                            'slug': sub_sub_name.lower().replace(" ", "-").replace("и", "i"),
+                            'slug': slug,
                             'description': f"Товары подкатегории {sub_sub_name}",
                             'is_active': True,
                             'created_at': timezone.now()
                         }
                     )
                     if created:
-                        logger.info(f"✅ Создана подкатегория 3-го уровня: {sub_sub_name}")
+                        logger.info(f"[OK] Создана подкатегория 3-го уровня: {sub_sub_name}")
 
 def parse_product(url):
     """Парсинг страницы товара"""
@@ -262,7 +268,7 @@ def parse_product(url):
         )
         
         # Даем странице время на загрузку
-        time.sleep(random.uniform(2, 4))
+        time.sleep(random.uniform(1, 2))
         
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         
@@ -272,59 +278,80 @@ def parse_product(url):
             return None
         name = name_elem.text.strip()
         
-        # Парсим цену
+        # Парсим цену - обновленные селекторы
         price = Decimal("0")
-        price_elem = soup.select_one("span[data-widget='webPrice']")
+        price_elem = soup.select_one("span[data-widget='webPrice'] span.tsHeadline500Medium")
         if not price_elem:
-            # Пробуем другие селекторы для цены
-            price_elem = soup.select_one(".tsBody500Medium")
-            if not price_elem:
-                price_elem = soup.select_one("[data-widget='webPrice']")
+            price_elem = soup.select_one("span[data-widget='webPrice']")
+        if not price_elem:
+            price_elem = soup.select_one(".tsHeadline500Medium")
         
         if price_elem:
             price_text = price_elem.text.replace("₽", "").replace(" ", "").replace(",", ".").strip()
             try:
                 price = Decimal(price_text)
             except:
+                # Логгируем ошибку, но продолжаем
+                logger.warning(f"Не удалось распознать цену: {price_text}")
                 price = Decimal("0")
         
-        # Парсим описание
+        # Парсим описание - улучшенные селекторы
         description = ""
         desc_elem = soup.select_one("div[data-widget='webDescription']")
         if not desc_elem:
+            # Новые селекторы для Ozon
+            desc_elem = soup.select_one("div[data-widget='webDescription'] div")
+        if not desc_elem:
             desc_elem = soup.select_one(".tsBodyL")
+            
         if desc_elem:
-            description = desc_elem.text.strip()
+            description = desc_elem.text.strip()[:2000]  # Ограничение длины
         
-        # Парсим характеристики
+        # Парсим характеристики - обновленные селекторы
         characteristics = []
         char_section = soup.select_one("dl[data-widget='webCharacteristics']")
+        if not char_section:
+            char_section = soup.select_one("div[data-widget='webCharacteristics']")
         if not char_section:
             char_section = soup.select_one(".characteristics")
         
         if char_section:
-            for char in char_section.find_all("div", class_="k6d"):
-                name_elem = char.find("dt")
-                value_elem = char.find("dd")
+            # Новый формат характеристик Ozon
+            char_items = char_section.find_all("div", class_="v0v")
+            if not char_items:
+                char_items = char_section.find_all("div", class_="k6d")
+            
+            for char in char_items:
+                name_elem = char.find("dt") or char.find("span", class_="v0v3")
+                value_elem = char.find("dd") or char.find("span", class_="v0v4")
                 if name_elem and value_elem:
                     char_name = name_elem.text.strip()
                     char_value = value_elem.text.strip()
                     characteristics.append({"name": char_name, "value": char_value})
         
-        # Парсим изображения
+        # Парсим изображения - более надежные селекторы
         images = []
-        image_elems = soup.select("img[loading='lazy']")
-        for img in image_elems:
+        image_container = soup.select_one("div[data-widget='webGallery']")
+        if image_container:
+            image_elems = image_container.select("img")
+        else:
+            image_elems = soup.select("img[loading='lazy']")
+        
+        for img in image_elems[:5]:  # Максимум 5 изображений
             src = img.get("src") or img.get("data-src")
             if src and "http" in src and "ozon" in src:
+                if src.startswith("//"):
+                    src = "https:" + src
                 images.append(src)
         
-        # Если не нашли изображения, пробуем другие селекторы
+        # Если не нашли изображения, пробуем альтернативные источники
         if not images:
-            image_elems = soup.select("img[alt*='товар']")
-            for img in image_elems:
+            image_elems = soup.select("img[alt*='товар'], img[alt*='product']")
+            for img in image_elems[:3]:
                 src = img.get("src") or img.get("data-src")
                 if src and "http" in src:
+                    if src.startswith("//"):
+                        src = "https:" + src
                     images.append(src)
         
         return {
@@ -386,17 +413,18 @@ def get_products_from_category(category_url, max_products=50):
 def main():
     # Очищаем старые данные
     logger.info("Очистка старых товаров...")
-    ProductCharacteristic.objects.all().delete()
-    ProductImage.objects.all().delete()
-    Product.objects.all().delete()
-    logger.info("Старые товары удалены")
+    # Удаляем только товары от Ozon продавца
+    products_to_delete = Product.objects.filter(seller=seller)
+    ProductCharacteristic.objects.filter(product__in=products_to_delete).delete()
+    ProductImage.objects.filter(product__in=products_to_delete).delete()
+    products_to_delete.delete()
+    logger.info(f"Удалено {products_to_delete.count()} старых товаров Ozon")
     
     # Создаем иерархию категорий
     create_category_hierarchy()
     
     total_products = 0
-    MAX_PRODUCTS = 500
-    products_per_category = MAX_PRODUCTS // len(CATEGORIES_STRUCTURE)
+    MAX_PRODUCTS = 100  # Требуется 100 товаров
     
     for root_name, root_data in CATEGORIES_STRUCTURE.items():
         if total_products >= MAX_PRODUCTS:
@@ -429,7 +457,7 @@ def main():
                     sub_sub_category = Category.objects.get(name=sub_sub_name, parent=sub_category)
                     
                     # Получаем товары из этой подкатегории
-                    product_links = get_products_from_category(sub_sub_url, 20)
+                    product_links = get_products_from_category(sub_sub_url, 10)  # 10 товаров на категорию
                     
                     # Обрабатываем товары
                     for product_url in product_links:
@@ -440,15 +468,16 @@ def main():
                         product_data = parse_product(product_url)
                         
                         if not product_data or not product_data["name"] or product_data["price"] <= 0:
+                            logger.warning("Пропуск товара из-за отсутствия данных")
                             continue
                         
                         # Создаем товар в базе
                         try:
                             product = Product.objects.create(
-                                name=product_data["name"],
+                                name=product_data["name"][:255],
                                 description=product_data["description"],
                                 price=product_data["price"],
-                                category=sub_sub_category,  # Привязываем к подкатегории 3-го уровня
+                                category=sub_sub_category,
                                 seller=seller,
                                 stock_quantity=random.randint(10, 100),
                                 rating=Decimal(random.uniform(3.5, 5.0)).quantize(Decimal('0.01')),
@@ -460,36 +489,41 @@ def main():
                             for char in product_data["characteristics"]:
                                 ProductCharacteristic.objects.create(
                                     product=product,
-                                    name=char["name"],
-                                    value=char["value"]
+                                    name=char["name"][:100],
+                                    value=char["value"][:255]
                                 )
                             
                             # Добавляем изображения
-                            for i, img_url in enumerate(product_data["images"][:5]):
+                            for i, img_url in enumerate(product_data["images"][:3]):  # Макс 3 изображения
+                                if not img_url:
+                                    continue
+                                    
                                 image_data = download_image(img_url)
                                 if image_data:
                                     img = ProductImage(
                                         product=product,
-                                        alt_text=f"{product.name} - изображение {i+1}",
+                                        alt_text=f"{product.name} - изображение {i+1}"[:255],
                                         is_primary=(i == 0),
                                         order=i,
                                         created_at=timezone.now()
                                     )
                                     img.image.save(
-                                        f"product_{product.id}_img_{i}.jpg", 
+                                        f"product_{product.id}_img_{i}.jpg",
                                         image_data,
                                         save=True
                                     )
-                                    time.sleep(0.5)  # Задержка между загрузками
+                                    time.sleep(0.3)  # Уменьшенная задержка
+                                else:
+                                    logger.warning(f"Не удалось загрузить изображение: {img_url}")
                             
                             total_products += 1
-                            logger.info(f"✅ Добавлен товар: {product.name} (цена: {product.price}₽)")
+                            logger.info(f"[OK] Добавлен товар: {product.name} (цена: {product.price}₽)")
                             
                         except Exception as e:
-                            logger.error(f"Ошибка при создании товара: {e}")
+                            logger.error(f"Ошибка при создании товара: {str(e)[:200]}")
                         
-                        # Случайная задержка между товарами
-                        time.sleep(random.uniform(2, 5))
+                        # Уменьшенная задержка между товарами
+                        time.sleep(random.uniform(1, 2))
     
     driver.quit()
     logger.info(f"\n=== РЕЗУЛЬТАТ ===")
