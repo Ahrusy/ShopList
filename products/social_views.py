@@ -62,7 +62,7 @@ def social_login_redirect(request, provider):
         )
     else:
         messages.error(request, 'Неподдерживаемый провайдер социальной сети')
-        return redirect('login')
+        return redirect('auth:login')
     
     return redirect(auth_url)
 
@@ -78,11 +78,11 @@ def social_login_callback(request, provider):
     
     if error:
         messages.error(request, f'Ошибка авторизации: {error}')
-        return redirect('login')
+        return redirect('auth:login')
     
     if not code:
         messages.error(request, 'Код авторизации не получен')
-        return redirect('login')
+        return redirect('auth:login')
     
     # Здесь должна быть логика обмена кода на токен и получения данных пользователя
     # Для демонстрации просто показываем сообщение

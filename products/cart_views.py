@@ -39,7 +39,7 @@ def add_to_cart(request, product_id):
             }, status=401)
         else:
             messages.error(request, 'Необходимо войти в систему')
-            return redirect('login')
+            return redirect('auth:login')
     
     product = get_object_or_404(Product, id=product_id)
     
@@ -100,7 +100,7 @@ def update_cart_item(request, item_id):
             }, status=401)
         else:
             messages.error(request, 'Необходимо войти в систему')
-            return redirect('login')
+            return redirect('auth:login')
     
     cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     
@@ -155,7 +155,7 @@ def remove_from_cart(request, item_id):
             }, status=401)
         else:
             messages.error(request, 'Необходимо войти в систему')
-            return redirect('login')
+            return redirect('auth:login')
     
     cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     product_name = cart_item.product.name
@@ -190,7 +190,7 @@ def clear_cart(request):
             }, status=401)
         else:
             messages.error(request, 'Необходимо войти в систему')
-            return redirect('login')
+            return redirect('auth:login')
     
     cart = get_object_or_404(Cart, user=request.user)
     cart.items.all().delete()

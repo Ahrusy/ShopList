@@ -1,5 +1,4 @@
 from django.urls import path, include
-from django.http import HttpResponse
 from . import views
 from . import cart_views, review_views, notification_views, analytics_views, promo_views
 
@@ -24,6 +23,8 @@ urlpatterns = [
     path('cart/clear/', cart_views.clear_cart, name='clear_cart'),
     path('cart/count/', cart_views.cart_count, name='cart_count'),
     
+    # Favorites URLs
+    path('favorites/', include('products.urls.favorite_urls')),
     
     # Test location URL
     path('test-location/', views.test_location_view, name='test_location'),

@@ -131,7 +131,7 @@ WSGI_APPLICATION = 'shoplist.wsgi.application'
 
 LOGIN_REDIRECT_URL = 'index' # URL для перенаправления после успешного входа
 LOGOUT_REDIRECT_URL = 'index' # URL для перенаправления после успешного выхода
-LOGIN_URL = 'login' # Для 2FA
+LOGIN_URL = 'auth:login' # Для 2FA
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
