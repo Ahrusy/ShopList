@@ -607,6 +607,169 @@
     
     <script src="{% static 'js/catalog.js' %}"></script>
     
+    <!-- Favorites JavaScript -->
+    <script>
+    // Функция для получения CSRF токена
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Функция для переключения избранного
+    function toggleFavorite(productId) {
+        const button = document.querySelector(`[data-product-id="${productId}"]`);
+        const heartIcon = button.querySelector('i');
+        
+        // Проверяем текущий статус
+        fetch(`/ru/favorites/check/${productId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_favorite) {
+                    // Удаляем из избранного
+                    removeFromFavorites(productId);
+                } else {
+                    // Добавляем в избранное
+                    addToFavorites(productId);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка проверки статуса избранного:', error);
+            });
+    }
+
+    // Функция для добавления в избранное
+    function addToFavorites(productId) {
+        fetch(`/ru/favorites/add/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateFavoriteButton(productId, true);
+                showNotification(data.message, 'success');
+            } else {
+                showNotification(data.message, 'info');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка добавления в избранное:', error);
+            showNotification('Ошибка добавления в избранное', 'error');
+        });
+    }
+
+    // Функция для удаления из избранного
+    function removeFromFavorites(productId) {
+        fetch(`/ru/favorites/remove/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateFavoriteButton(productId, false);
+                showNotification(data.message, 'success');
+            } else {
+                showNotification(data.message, 'info');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка удаления из избранного:', error);
+            showNotification('Ошибка удаления из избранного', 'error');
+        });
+    }
+
+    // Функция для обновления кнопки избранного
+    function updateFavoriteButton(productId, isFavorite) {
+        const button = document.querySelector(`[data-product-id="${productId}"]`);
+        const heartIcon = button.querySelector('i');
+        
+        if (isFavorite) {
+            heartIcon.classList.remove('text-gray-400');
+            heartIcon.classList.add('text-red-500');
+            heartIcon.classList.remove('far');
+            heartIcon.classList.add('fas');
+        } else {
+            heartIcon.classList.remove('text-red-500');
+            heartIcon.classList.add('text-gray-400');
+            heartIcon.classList.remove('fas');
+            heartIcon.classList.add('far');
+        }
+    }
+
+    // Функция для показа уведомлений
+    function showNotification(message, type = 'info') {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-md text-white text-sm font-medium transition-all duration-300 transform translate-x-full`;
+        
+        // Устанавливаем цвет в зависимости от типа
+        switch(type) {
+            case 'success':
+                notification.classList.add('bg-green-500');
+                break;
+            case 'error':
+                notification.classList.add('bg-red-500');
+                break;
+            case 'info':
+            default:
+                notification.classList.add('bg-blue-500');
+                break;
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Анимация появления
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Автоматическое скрытие через 3 секунды
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Инициализация статуса избранного для всех товаров при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        const favoriteButtons = document.querySelectorAll('.favorite-btn');
+        favoriteButtons.forEach(button => {
+            const productId = button.getAttribute('data-product-id');
+            if (productId) {
+                // Проверяем статус избранного для каждого товара
+                fetch(`/ru/favorites/check/${productId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateFavoriteButton(productId, data.is_favorite);
+                    })
+                    .catch(error => {
+                        console.error('Ошибка проверки статуса избранного:', error);
+                    });
+            }
+        });
+    });
+    </script>
+    
     
 </body>
 </html>

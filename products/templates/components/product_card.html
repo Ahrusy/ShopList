@@ -22,7 +22,9 @@
         {% endif %}
         
         <!-- Favorite Button -->
-        <button class="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+        <button class="favorite-btn absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors" 
+                data-product-id="{{ product.id }}"
+                onclick="toggleFavorite({{ product.id }})">
             <i class="fas fa-heart text-gray-400 hover:text-red-500 text-sm"></i>
         </button>
     </div>

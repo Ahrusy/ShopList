@@ -6,60 +6,213 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Хлебные крошки -->
-    <nav class="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-        <a href="/" class="hover:text-blue-600">Главная</a>
-        <i class="fas fa-chevron-right text-xs"></i>
-        <span class="text-gray-900">Избранное</span>
-    </nav>
-
-    <!-- Заголовок страницы -->
+    <!-- Заголовок страницы в стиле Ozon -->
     <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Избранное</h1>
-        <p class="text-gray-600">Товары, которые вам понравились и которые вы хотите купить позже</p>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            Избранное • Подборки • Вишлисты • Магазины и Бренды
+        </h1>
     </div>
 
-    <!-- Действия с избранным -->
-    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <label class="flex items-center">
-                    <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                    <span class="ml-2 text-sm text-gray-700">Выбрать все</span>
-                </label>
-                <span class="text-sm text-gray-500" id="selectedCount">0 товаров выбрано</span>
-            </div>
-            
-            <div class="flex items-center space-x-3">
-                <button id="addSelectedToCart" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm" disabled>
-                    <i class="fas fa-shopping-cart mr-2"></i>
-                    Добавить в корзину
-                </button>
-                <button id="removeSelected" class="px-4 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors text-sm" disabled>
-                    <i class="fas fa-trash mr-2"></i>
-                    Удалить
-                </button>
+    {% if favorites %}
+        <!-- Действия с избранным -->
+        <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Выбрать все</span>
+                    </label>
+                    <span class="text-sm text-gray-500" id="selectedCount">0 товаров выбрано</span>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <button id="addSelectedToCart" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm" disabled>
+                        <i class="fas fa-shopping-cart mr-2"></i>
+                        Добавить в корзину
+                    </button>
+                    <button id="removeSelected" class="px-4 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors text-sm" disabled>
+                        <i class="fas fa-trash mr-2"></i>
+                        Удалить
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Список избранного -->
-    {% include 'components/list_base.html' with 
-        title="Избранные товары" 
-        subtitle="Товары, которые вы добавили в избранное"
-        icon_class="fas fa-heart"
-        items=favorites
-        item_template="components/favorite_item.html"
-        show_filters=True
-        filter_options=category_filters
-        pagination=True
-        empty_title="В избранном пока ничего нет"
-        empty_description="Добавляйте товары в избранное, нажимая на сердечко"
-        empty_action_url="/"
-        empty_action_text="Начать покупки"
-        empty_action_icon="fas fa-shopping-cart"
-        empty_icon_class="fas fa-heart"
-    %}
+        <!-- Сетка товаров -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for product in favorites %}
+                <div class="product-card bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <!-- Product Image -->
+                    <div class="relative">
+                        <a href="{% url 'product_detail' product.pk %}">
+                            {% if product.images.first %}
+                                <img src="{{ product.images.first.image.url }}" 
+                                     alt="{{ product.name }}" 
+                                     class="w-full h-48 object-cover">
+                            {% else %}
+                                <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
+                                    <i class="fas fa-image text-gray-300 text-3xl"></i>
+                                </div>
+                            {% endif %}
+                        </a>
+                        
+                        <!-- Discount Badge -->
+                        {% if product.discount_price %}
+                            <div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                -{{ product.discount_percentage|floatformat:0 }}%
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Favorite Button -->
+                        <button class="favorite-btn absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors" 
+                                data-product-id="{{ product.id }}"
+                                onclick="toggleFavorite({{ product.id }})">
+                            <i class="fas fa-heart text-red-500 text-sm"></i>
+                        </button>
+                    </div>
+
+                    <!-- Product Info -->
+                    <div class="p-3">
+                        <!-- Rating -->
+                        <div class="flex items-center mb-2">
+                            <div class="flex rating-stars text-yellow-400">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= product.rating %}
+                                        <i class="fas fa-star text-xs"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-xs"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="text-xs text-gray-500 ml-1">({{ product.reviews_count }})</span>
+                        </div>
+
+                        <!-- Product Name -->
+                        <h3 class="font-medium text-gray-900 mb-2 text-sm leading-tight line-clamp-2">
+                            <a href="{% url 'product_detail' product.pk %}" class="hover:text-blue-600">
+                                {{ product.name|truncatechars:50 }}
+                            </a>
+                        </h3>
+
+                        <!-- Seller -->
+                        <p class="text-xs text-gray-500 mb-2 truncate">{{ product.seller.company_name|default:"OZON" }}</p>
+
+                        <!-- Price -->
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                {% if product.discount_price %}
+                                    <div class="text-lg font-bold text-gray-900">{{ product.discount_price|floatformat:0 }} ₽</div>
+                                    <div class="text-xs text-gray-500 line-through">{{ product.price|floatformat:0 }} ₽</div>
+                                {% else %}
+                                    <div class="text-lg font-bold text-gray-900">{{ product.price|floatformat:0 }} ₽</div>
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {% if product.stock_quantity > 0 %}
+                                    <span class="text-green-600 font-medium">В наличии</span>
+                                {% else %}
+                                    <span class="text-red-600">Нет в наличии</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Add to Cart Button -->
+                        <button onclick="addToCart({{ product.id }})" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                {% if product.stock_quantity == 0 %}disabled{% endif %}>
+                            {% if product.stock_quantity > 0 %}
+                                <i class="fas fa-shopping-cart mr-1"></i>В корзину
+                            {% else %}
+                                Нет в наличии
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Пустое состояние в стиле Ozon -->
+        <div class="text-center py-16">
+            <div class="mx-auto w-32 h-32 mb-6 flex items-center justify-center">
+                <!-- SVG иконка коробки с сердцем -->
+                <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Коробка -->
+                    <rect x="20" y="40" width="88" height="60" rx="4" fill="#F3F4F6" stroke="#E5E7EB" stroke-width="2"/>
+                    <rect x="20" y="40" width="88" height="20" rx="4" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="2"/>
+                    <path d="M20 60 L108 60 L108 100 L20 100 Z" fill="#F3F4F6" stroke="#E5E7EB" stroke-width="2"/>
+                    
+                    <!-- Сердце -->
+                    <g transform="translate(64, 30)">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                              fill="#EC4899" stroke="#EC4899" stroke-width="1"/>
+                    </g>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">В избранном пока пусто</h3>
+            <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                Добавляйте товары с помощью ❤️, чтобы не потерять их и купить позже
+            </p>
+            <a href="/" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <i class="fas fa-shopping-cart mr-2"></i>
+                Начать покупки
+            </a>
+        </div>
+
+        <!-- Рекомендуемые товары -->
+        <div class="mt-16">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Подобрано для вас</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {% for product in recommended_products|slice:":4" %}
+                    <div class="product-card bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <!-- Product Image -->
+                        <div class="relative">
+                            <a href="{% url 'product_detail' product.pk %}">
+                                {% if product.images.first %}
+                                    <img src="{{ product.images.first.image.url }}" 
+                                         alt="{{ product.name }}" 
+                                         class="w-full h-48 object-cover">
+                                {% else %}
+                                    <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
+                                        <i class="fas fa-image text-gray-300 text-3xl"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            
+                            <!-- Sale Badge -->
+                            <div class="absolute bottom-2 left-2 bg-pink-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                Распродажа
+                            </div>
+                            
+                            <!-- Favorite Button -->
+                            <button class="favorite-btn absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors" 
+                                    data-product-id="{{ product.id }}"
+                                    onclick="toggleFavorite({{ product.id }})">
+                                <i class="fas fa-heart text-gray-400 hover:text-red-500 text-sm"></i>
+                            </button>
+                        </div>
+
+                        <!-- Product Info -->
+                        <div class="p-3">
+                            <!-- Product Name -->
+                            <h3 class="font-medium text-gray-900 mb-2 text-sm leading-tight line-clamp-2">
+                                <a href="{% url 'product_detail' product.pk %}" class="hover:text-blue-600">
+                                    {{ product.name|truncatechars:50 }}
+                                </a>
+                            </h3>
+
+                            <!-- Price -->
+                            <div class="flex items-center justify-between">
+                                <div class="text-lg font-bold text-gray-900">{{ product.price|floatformat:0 }} ₽</div>
+                                <div class="text-xs text-gray-500">
+                                    <span class="text-green-600 font-medium">В наличии</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 </div>
 
 <!-- JavaScript для интерактивности -->
