@@ -34,13 +34,13 @@
         
         /* Градиентные фоны для элементов интерфейса */
         .topbar-gradient {
-            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important; /* Apple style */
         }
         .header-gradient {
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #e6f3ff 100%) !important; /* Google style */
         }
         .footer-gradient {
-            background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%) !important; /* Ozon style */
         }
         .product-card {
             transition: all 0.3s ease;
@@ -293,29 +293,21 @@
         </div>
 
         <!-- Bottom Navigation -->
-        <div class="bg-white border-t">
+        <div class="bg-white border-t rounded-t-lg">
             <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
-                <nav class="flex items-center justify-between py-3">
-                    <div class="flex items-center space-x-6 relative overflow-hidden">
-                        <!-- Карусель категорий -->
-                        <div class="flex items-center space-x-6 transition-transform duration-300" id="categoriesCarousel">
-                            {% for category in categories %}
-                                <a href="{% url 'category_detail' category.slug %}" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 whitespace-nowrap">
+                <nav class="py-3">
+                    <!-- Карусель категорий с горизонтальным скроллом -->
+                    <div class="flex items-center space-x-2 overflow-x-auto scrollbar-hide" id="categoriesCarousel">
+                        {% for category in categories %}
+                            {% if category.slug %}
+                                <a href="{% url 'category_view' category.slug %}" class="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-300 whitespace-nowrap group flex-shrink-0">
                                     {% if category.icon %}
-                                        <i class="{{ category.icon }} text-blue-600"></i>
+                                        <i class="{{ category.icon }} text-gray-500 group-hover:text-blue-600 transition-colors duration-300"></i>
                                     {% endif %}
                                     <span class="text-sm font-medium">{{ category.name }}</span>
                                 </a>
-                            {% endfor %}
-                        </div>
-                        
-                        <!-- Кнопки навигации карусели -->
-                        <button id="carouselPrev" class="absolute left-0 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors z-10">
-                            <i class="fas fa-chevron-left text-gray-600"></i>
-                        </button>
-                        <button id="carouselNext" class="absolute right-0 bg-white shadow-md rounded-full p-2 hover:bg-gray-50 transition-colors z-10">
-                            <i class="fas fa-chevron-right text-gray-600"></i>
-                        </button>
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </nav>
             </div>

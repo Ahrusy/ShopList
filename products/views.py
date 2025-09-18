@@ -17,7 +17,7 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django_filters.views import FilterView
 from .filters import ProductFilter # Этот файл еще не создан, но будет создан позже
 from .forms import ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm, OrderForm, OrderItemForm
-from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page, Order, OrderItem, Cart, CartItem
+from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page, Order, OrderItem, Cart, CartItem, Banner, ProductBanner
 from .services.product_service import ProductService # Импортируем сервис
 from django.forms import inlineformset_factory
 
@@ -28,6 +28,13 @@ def index(request):
     """Главная страница с товарами в стиле Ozon"""
     products = Product.objects.filter(is_active=True).select_related('category', 'seller').prefetch_related('images', 'tags')
     categories = Category.objects.all()[:12]
+    banners = Banner.objects.filter(is_active=True).order_by('sort_order')
+    
+    # Товарные баннеры для слайдера
+    from .models import ProductBanner
+    product_banners = ProductBanner.objects.filter(
+        is_active=True
+    ).order_by('sort_order')[:8]
     
     # Фильтрация по категории
     category_id = request.GET.get('category')
@@ -61,6 +68,8 @@ def index(request):
         'root_categories': root_categories,
         'catalog_categories': root_categories,  # Для мегаменю
         'search_query': search_query,
+        'banners': banners,
+        'slider_products': product_banners,
     }
     return render(request, 'index_ozon.html', context)
 
@@ -563,3 +572,11 @@ def order_tracking_view(request, order_id):
         'status_description': status_descriptions.get(order.status, _('Неизвестный статус')),
     }
     return render(request, 'order_tracking.html', context)
+
+
+def product_banners_management(request):
+    """Страница управления товарными баннерами"""
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return redirect('login')
+    
+    return render(request, 'admin/product_banners_management.html')

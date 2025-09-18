@@ -67,3 +67,5 @@ class LocationMiddleware(MiddlewareMixin):
             # Для неаутентифицированных пользователей сохраняем в сессию
             request.session['user_location_id'] = location.id
 
+
+

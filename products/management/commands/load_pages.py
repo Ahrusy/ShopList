@@ -432,3 +432,5 @@ class Command(BaseCommand):
             self.style.SUCCESS('Успешно загружены все страницы!')
         )
 
+
+

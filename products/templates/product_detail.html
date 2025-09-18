@@ -17,9 +17,15 @@
             <li>
                 <div class="flex items-center">
                     <i class="fas fa-chevron-right text-gray-400 mx-1"></i>
-                    <a href="{% url 'category' product.category.slug %}" class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">
+                    {% if product.category.slug %}
+                    <a href="{% url 'category_view' product.category.slug %}" class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">
                         {{ product.category.name }}
                     </a>
+                    {% else %}
+                    <span class="ml-1 text-sm font-medium text-gray-700 md:ml-2">
+                        {{ product.category.name }}
+                    </span>
+                    {% endif %}
                 </div>
             </li>
             <li aria-current="page">
@@ -172,14 +178,14 @@
 <script>
 function addToCart(productId) {
     // Простая функция добавления в корзину
-    fetch('/api/cart/add/', {
+    fetch(`/cart/add/${productId}/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
         },
         body: JSON.stringify({
-            product_id: productId,
             quantity: 1
         })
     })

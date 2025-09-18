@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'products', # Добавляем наше приложение
+    'products_simple', # Добавляем наше упрощенное приложение
 ]
 
 AUTH_USER_MODEL = 'products.User' # Указываем кастомную модель пользователя
@@ -225,6 +226,9 @@ PARLER_ENABLE_CACHING = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles' # Для продакшена
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Media files settings
 MEDIA_URL = '/media/'

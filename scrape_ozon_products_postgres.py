@@ -21,6 +21,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 import random
 import string
+import re
 
 # Настройка логгера
 logging.basicConfig(
@@ -216,6 +217,35 @@ CATEGORIES_STRUCTURE = {
 def create_category_hierarchy():
     """Создает иерархию категорий в базе данных"""
     logger.info("Создание иерархии категорий...")
+    
+    def generate_unique_slug(name, model, max_retries=100):
+        # Генерация базового slug
+        base_slug = slugify(name) or "category"
+        
+        # Очистка от недопустимых символов
+        base_slug = re.sub(r'[^a-z0-9-]', '', base_slug)
+        
+        # Если после очистки slug пустой, генерируем случайный
+        if not base_slug:
+            base_slug = f"cat-{''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}"
+        
+        slug = base_slug
+        counter = 1
+        
+        # Поиск уникального slug
+        while model.objects.filter(slug=slug).exists():
+            # Для первых 100 попыток используем числовой суффикс
+            if counter <= max_retries:
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            # Если не помогло, генерируем случайный суффикс
+            else:
+                random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+                slug = f"{base_slug}-{random_suffix}"
+                # Сбрасываем счетчик после генерации случайного суффикса
+                counter = 1
+        
+        return slug
     
     for root_name, root_data in CATEGORIES_STRUCTURE.items():
         # Создаем корневую категорию
@@ -417,14 +447,13 @@ def get_products_from_category(category_url, max_products=50):
         return []
 
 def main():
-    # Очищаем старые данные
-    logger.info("Очистка старых товаров...")
-    # Удаляем только товары от Ozon продавца
-    products_to_delete = Product.objects.filter(seller=seller)
-    ProductCharacteristic.objects.filter(product__in=products_to_delete).delete()
-    ProductImage.objects.filter(product__in=products_to_delete).delete()
-    products_to_delete.delete()
-    logger.info(f"Удалено {products_to_delete.count()} старых товаров Ozon")
+    # Очищаем ВСЕ старые данные
+    logger.info("Очистка старых данных...")
+    ProductCharacteristic.objects.all().delete()
+    ProductImage.objects.all().delete()
+    Product.objects.all().delete()
+    Category.objects.all().delete()  # Удаляем все категории перед созданием новых
+    logger.info("Старые данные удалены")
     
     # Создаем иерархию категорий
     create_category_hierarchy()
@@ -541,3 +570,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

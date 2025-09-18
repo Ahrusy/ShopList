@@ -163,3 +163,4 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(f'  Ошибка создания изображения: {e}')
 
+

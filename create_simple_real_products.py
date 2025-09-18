@@ -259,3 +259,4 @@ def download_and_add_images():
 if __name__ == '__main__':
     create_real_products_with_sql()
     download_and_add_images()
+

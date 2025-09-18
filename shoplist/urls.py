@@ -22,6 +22,7 @@ from django.conf.urls.i18n import i18n_patterns # Для мультиязычн�
 from django.views.i18n import set_language # Для смены языка
 from django.shortcuts import redirect
 from products.views import index, category_view, checkout_view, order_detail_view, order_list_view, test_location_view, page_list_view, page_detail_view, product_detail
+from products import cart_views
 from products.api import urls as products_api_urls
 from rest_framework import routers
 from products.api.views import ProductViewSet, CategoryViewSet, OrderViewSet, CartViewSet, UserViewSet, ShopViewSet, TagViewSet, LocationViewSet, UserLocationViewSet
@@ -60,7 +61,7 @@ urlpatterns += i18n_patterns(
     path('product/<int:product_id>/', product_detail, name='product_detail'),
     path('categories/<slug:category_slug>/', category_view, name='category_view'),
     path('category/<str:category_slug>/', category_view, name='category'),
-    path('cart/', checkout_view, name='cart'),
+    path('cart/', cart_views.cart_view, name='cart'),
     path('checkout/', checkout_view, name='checkout_view'),
     path('orders/', order_list_view, name='order_list'),
     path('orders/<int:order_id>/', order_detail_view, name='order_detail'),
@@ -72,6 +73,12 @@ urlpatterns += i18n_patterns(
     # Редиректы для старых URL-ов
     path('register/', lambda request: redirect('/ru/auth/register/'), name='old_register'),
     path('login/', lambda request: redirect('/ru/auth/login/'), name='old_login'),
+            # URL'ы для корзины
+            path('cart/add/<int:product_id>/', cart_views.add_to_cart, name='add_to_cart'),
+            path('cart/update/<int:product_id>/', cart_views.update_cart_item, name='update_cart_item'),
+            path('cart/remove/<int:product_id>/', cart_views.remove_from_cart, name='remove_from_cart'),
+            path('cart/clear/', cart_views.clear_cart, name='clear_cart'),
+            path('cart/count/', cart_views.cart_count, name='cart_count'),
 )
 
 if settings.DEBUG:

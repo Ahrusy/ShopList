@@ -8,6 +8,8 @@ def catalog_categories(request):
             parent__isnull=True, 
             is_active=True, 
             show_in_megamenu=True
+        ).prefetch_related(
+            'children__children'
         ).order_by('sort_order', 'slug')
     }
 

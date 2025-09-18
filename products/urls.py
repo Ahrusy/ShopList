@@ -1,6 +1,6 @@
 from django.urls import path, include
 from . import views
-from . import cart_views, review_views, notification_views, analytics_views, promo_views
+from . import cart_views, review_views, notification_views, analytics_views, promo_views, api_views
 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')), # Встроенные URL-адреса Django для аутентификации
@@ -75,4 +75,16 @@ urlpatterns = [
     path('promo-codes/check/<str:code>/', promo_views.check_promo_code, name='check_promo_code'),
     path('promo-codes/available/', promo_views.promo_codes_available, name='available_promo_codes'),
     path('admin/promo-codes/stats/', promo_views.promo_code_stats, name='promo_stats'),
+    
+    # Управление товарными баннерами
+    path('admin/product-banners/', views.product_banners_management, name='product_banners_management'),
+    
+    # API для товарных баннеров
+    path('api/product-banners/', api_views.product_banners_list, name='api_product_banners_list'),
+    path('api/product-banners/<int:banner_id>/', api_views.product_banner_detail, name='api_product_banner_detail'),
+    path('api/product-banners/create/', api_views.product_banner_create, name='api_product_banner_create'),
+    path('api/product-banners/<int:banner_id>/update/', api_views.product_banner_update, name='api_product_banner_update'),
+    path('api/product-banners/<int:banner_id>/delete/', api_views.product_banner_delete, name='api_product_banner_delete'),
+    path('api/product-banners/<int:banner_id>/toggle/', api_views.product_banner_toggle_active, name='api_product_banner_toggle'),
+    path('api/product-banners/reorder/', api_views.product_banner_reorder, name='api_product_banner_reorder'),
 ]

@@ -13,3 +13,4 @@ with connection.cursor() as cursor:
     print("Таблицы в базе данных:")
     for table in sorted(tables):
         print(f"  - {table}")
+

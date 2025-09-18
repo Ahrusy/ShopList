@@ -15,6 +15,26 @@ class User(AbstractUser):
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user', verbose_name="Роль")
     favorites = models.ManyToManyField('Product', related_name='favorited_by', blank=True, verbose_name="Избранные товары")
+    
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        help_text=(
+            'The groups this user belongs to. A user will get all permissions '
+            'granted to each of their groups.'
+        ),
+        related_name="products_simple_user_set", # Уникальное related_name
+        related_query_name="user",
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="products_simple_user_permissions_set", # Уникальное related_name
+        related_query_name="user",
+    )
 
     def __str__(self):
         return self.username
@@ -96,16 +116,21 @@ class Seller(models.Model):
 
 
 class Product(models.Model):
-    """Упрощенная модель товара"""
+    """Расширенная модель товара с дополнительными полями"""
     name = models.CharField(max_length=255, verbose_name="Название")
     description = models.TextField(verbose_name="Описание")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Цена со скидкой")
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, verbose_name="Процент скидки")
     currency = models.CharField(max_length=3, default='RUB', verbose_name="Валюта")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name="Категория")
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='products', null=True, blank=True, verbose_name="Продавец")
     sku = models.CharField(max_length=100, unique=True, blank=True, verbose_name="Артикул")
     stock_quantity = models.PositiveIntegerField(default=0, verbose_name="Количество на складе")
+    brand = models.CharField(max_length=100, blank=True, verbose_name="Бренд")
+    weight = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, verbose_name="Вес (г)")
+    dimensions = models.JSONField(null=True, blank=True, verbose_name="Габариты")
+    warranty = models.CharField(max_length=100, blank=True, verbose_name="Гарантия")
     is_active = models.BooleanField(default=True, verbose_name="Активен")
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00, verbose_name="Рейтинг")
     reviews_count = models.PositiveIntegerField(default=0, verbose_name="Количество отзывов")
@@ -120,13 +145,6 @@ class Product(models.Model):
     def final_price(self):
         """Возвращает финальную цену (со скидкой или обычную)"""
         return self.discount_price if self.discount_price else self.price
-    
-    @property
-    def discount_percentage(self):
-        """Возвращает процент скидки"""
-        if self.discount_price and self.price:
-            return ((self.price - self.discount_price) / self.price) * 100
-        return 0
     
     def save(self, *args, **kwargs):
         if not self.sku:
@@ -143,6 +161,7 @@ class Product(models.Model):
             models.Index(fields=['price']),
             models.Index(fields=['rating']),
             models.Index(fields=['views_count']),
+            models.Index(fields=['brand']),
         ]
 
 

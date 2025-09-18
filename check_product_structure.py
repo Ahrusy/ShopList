@@ -13,3 +13,4 @@ with connection.cursor() as cursor:
     print("Структура таблицы products_product:")
     for column in columns:
         print(f"  - {column[0]}: {column[1]}")
+

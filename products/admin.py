@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import (
     User, Category, Shop, Tag, Product, ProductImage, ProductCharacteristic,
     Seller, Order, OrderItem, Review, Cart, CartItem, Commission,
-    Location, UserLocation, PageCategory, Page, PromoCode, Notification
+    Location, UserLocation, PageCategory, Page, PromoCode, Notification, Banner, ProductBanner
 )
 
 
@@ -247,3 +247,40 @@ class NotificationAdmin(admin.ModelAdmin):
     )
     readonly_fields = ('created_at',)
     ordering = ('-created_at',)
+
+
+@admin.register(Banner)
+class BannerAdmin(admin.ModelAdmin):
+    list_display = ('title', 'banner_type', 'is_active', 'sort_order', 'created_at', 'updated_at')
+    list_filter = ('banner_type', 'is_active', 'created_at')
+    search_fields = ('title', 'subtitle')
+    list_editable = ('is_active', 'sort_order')
+    ordering = ('sort_order', '-created_at')
+    fieldsets = (
+        (_('Основная информация'), {
+            'fields': ('title', 'subtitle', 'image', 'link')
+        }),
+        (_('Настройки'), {
+            'fields': ('banner_type', 'is_active', 'sort_order')
+        }),
+    )
+
+
+@admin.register(ProductBanner)
+class ProductBannerAdmin(admin.ModelAdmin):
+    list_display = ('title', 'style', 'is_active', 'sort_order', 'button_text', 'created_at')
+    list_filter = ('style', 'is_active', 'created_at')
+    search_fields = ('title', 'subtitle', 'description')
+    list_editable = ('is_active', 'sort_order', 'button_text')
+    ordering = ('sort_order', '-created_at')
+    fieldsets = (
+        (_('Основная информация'), {
+            'fields': ('title', 'subtitle', 'description', 'image', 'link')
+        }),
+        (_('Стиль и дизайн'), {
+            'fields': ('style', 'button_text', 'background_color', 'text_color')
+        }),
+        (_('Настройки'), {
+            'fields': ('is_active', 'sort_order')
+        }),
+    )

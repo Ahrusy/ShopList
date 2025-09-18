@@ -23,6 +23,26 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user', verbose_name=_("Роль"))
     phone = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name=_("Телефон"))
     favorites = models.ManyToManyField('Product', related_name='favorited_by', blank=True, verbose_name=_("Избранные товары"))
+    
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name=_('groups'),
+        blank=True,
+        help_text=_(
+            'The groups this user belongs to. A user will get all permissions '
+            'granted to each of their groups.'
+        ),
+        related_name="products_user_set", # Уникальное related_name
+        related_query_name="user",
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name=_('user permissions'),
+        blank=True,
+        help_text=_('Specific permissions for this user.'),
+        related_name="products_user_permissions_set", # Уникальное related_name
+        related_query_name="user",
+    )
 
     def __str__(self):
         return self.username
@@ -478,8 +498,14 @@ class Notification(models.Model):
 @receiver(post_save, sender=Product)
 def update_product_search_vector(sender, instance, **kwargs):
     """Обновляет вектор поиска для товара"""
-    instance.search_vector = SearchVector('translations__name', 'translations__description')
-    instance.save(update_fields=['search_vector'])
+    # Проверяем, что это не рекурсивный вызов
+    if not kwargs.get('update_fields') or 'search_vector' not in kwargs.get('update_fields', []):
+        from django.db import transaction
+        with transaction.atomic():
+            # Обновляем search_vector напрямую через QuerySet, чтобы избежать рекурсии
+            Product.objects.filter(pk=instance.pk).update(
+                search_vector=SearchVector('name', 'description')
+            )
 
 
 @receiver(post_save, sender=Review)
@@ -603,6 +629,68 @@ class Favorite(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
+
+
+class Banner(models.Model):
+    """Модель рекламных баннеров"""
+    BANNER_TYPE_CHOICES = [
+        ('main', _('Главный баннер')),
+        ('sidebar', _('Боковой баннер')),
+        ('footer', _('Нижний баннер')),
+        ('product', _('Товарный баннер')),
+    ]
+    
+    title = models.CharField(max_length=200, verbose_name=_("Заголовок"))
+    subtitle = models.CharField(max_length=300, blank=True, verbose_name=_("Подзаголовок"))
+    image = models.ImageField(upload_to='banners/', verbose_name=_("Изображение"))
+    link = models.URLField(blank=True, verbose_name=_("Ссылка"))
+    banner_type = models.CharField(max_length=20, choices=BANNER_TYPE_CHOICES, default='main', verbose_name=_("Тип баннера"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Активен"))
+    sort_order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок сортировки"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+    
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        verbose_name = _("Баннер")
+        verbose_name_plural = _("Баннеры")
+        ordering = ['sort_order', '-created_at']
+
+
+class ProductBanner(models.Model):
+    """Модель товарных баннеров для слайдера"""
+    BANNER_STYLE_CHOICES = [
+        ('discount', _('Скидка')),
+        ('new', _('Новинка')),
+        ('popular', _('Популярное')),
+        ('premium', _('Премиум')),
+        ('sale', _('Распродажа')),
+        ('delivery', _('Доставка')),
+    ]
+    
+    title = models.CharField(max_length=100, verbose_name=_("Заголовок"))
+    subtitle = models.CharField(max_length=200, blank=True, verbose_name=_("Подзаголовок"))
+    description = models.TextField(blank=True, verbose_name=_("Описание"))
+    image = models.ImageField(upload_to='product_banners/', verbose_name=_("Изображение"))
+    link = models.URLField(blank=True, verbose_name=_("Ссылка"))
+    style = models.CharField(max_length=20, choices=BANNER_STYLE_CHOICES, default='new', verbose_name=_("Стиль баннера"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Активен"))
+    sort_order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок сортировки"))
+    button_text = models.CharField(max_length=50, default='Подробнее', verbose_name=_("Текст кнопки"))
+    background_color = models.CharField(max_length=7, default='#000000', verbose_name=_("Цвет фона"))
+    text_color = models.CharField(max_length=7, default='#FFFFFF', verbose_name=_("Цвет текста"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+    
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        verbose_name = _("Товарный баннер")
+        verbose_name_plural = _("Товарные баннеры")
+        ordering = ['sort_order', '-created_at']
 
 
 @receiver(post_save, sender=User)

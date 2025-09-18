@@ -27,14 +27,16 @@
                 </h3>
                 <ul class="space-y-2">
                     {% for child in category.children.all %}
+                        {% if child.slug %}
                     <li>
                         <a 
-                            href="{% url 'category' child.slug %}" 
+                            href="{% url 'category_view' child.slug %}" 
                             class="text-gray-700 hover:text-blue-600 hover:bg-gray-50 block py-1 px-2 rounded transition-colors"
                         >
                             {{ child.name }}
                         </a>
                     </li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
             </div>

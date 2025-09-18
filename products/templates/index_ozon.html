@@ -1,9 +1,103 @@
 {% extends 'base_ozon.html' %}
+{% load static %}
 
 {% block title %}Ozon - интернет-магазин{% endblock %}
 
+{% block extra_css %}
+{% endblock %}
+
 {% block content %}
 
+<!-- Banners Section -->
+{% if banners %}
+<div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-6">
+    <div class="relative overflow-hidden rounded-lg">
+        <!-- Карусель баннеров - показываем 3 баннера одновременно -->
+        <div class="flex transition-transform duration-500 ease-in-out" id="bannerCarousel" style="transform: translateX(-33.333%);">
+            {% for banner in banners %}
+            <div class="w-1/3 flex-shrink-0 px-2">
+                <a href="{{ banner.link|default:'#' }}">
+                    <div class="relative bg-white rounded-lg shadow-lg overflow-hidden h-80 group">
+                        <img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                            <h3 class="text-xl font-bold mb-2 drop-shadow-lg">{{ banner.title }}</h3>
+                            {% if banner.subtitle %}
+                            <p class="text-sm opacity-90 drop-shadow-md">{{ banner.subtitle }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Эффект наведения -->
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Индикаторы (точки) -->
+        {% if banners|length > 3 %}
+        <div class="flex justify-center space-x-2 mt-4">
+            <button class="w-2 h-2 rounded-full transition-all duration-300 banner-indicator active bg-red-500" data-slide="0"></button>
+            <button class="w-2 h-2 rounded-full transition-all duration-300 banner-indicator bg-gray-300" data-slide="1"></button>
+        </div>
+        {% endif %}
+        
+        <!-- Кнопки навигации -->
+        {% if banners|length > 3 %}
+        <button id="bannerPrev" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-2 shadow-md transition-all duration-300">
+            <i class="fas fa-chevron-left text-gray-600 text-sm"></i>
+        </button>
+        <button id="bannerNext" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-2 shadow-md transition-all duration-300">
+            <i class="fas fa-chevron-right text-gray-600 text-sm"></i>
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Product Slider Section -->
+{% if slider_products %}
+<div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
+    <div class="product-slider-container">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Товарные предложения</h2>
+            <p class="text-gray-600">Специальные акции и скидки</p>
+        </div>
+        
+        <!-- Swiper -->
+        <div class="swiper bannerCarousel">
+            <div class="swiper-wrapper">
+                    {% for banner in slider_products %}
+                    <div class="swiper-slide">
+                        <div class="relative h-full">
+                            {% if banner.image %}
+                                <img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full bg-gray-800 flex items-center justify-center">
+                                    <i class="fas fa-image text-6xl text-gray-600"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Banner Info Overlay -->
+                            <div class="info">
+                                <span>{{ banner.title }}</span>
+                                <span>{{ banner.subtitle }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            <div class="swiper-pagination"></div>
+            
+            <!-- Navigation buttons -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Products Section -->
 <div id="products" class="bg-gray-50 py-6">
@@ -57,5 +151,140 @@
         {% endif %}
     </div>
 </div>
+
+<!-- JavaScript для карусели баннеров -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const carousel = document.getElementById('bannerCarousel');
+    const prevBtn = document.getElementById('bannerPrev');
+    const nextBtn = document.getElementById('bannerNext');
+    const indicators = document.querySelectorAll('.banner-indicator');
+    
+    if (!carousel) return;
+    
+    let currentSlide = 0;
+    const totalSlides = Math.ceil({{ banners|length }} / 3);
+    
+    function updateCarousel() {
+        const translateX = -33.333 * currentSlide;
+        carousel.style.transform = `translateX(${translateX}%)`;
+        
+        // Обновляем индикаторы
+        indicators.forEach((indicator, index) => {
+            if (index === currentSlide) {
+                indicator.classList.add('active', 'bg-red-500');
+                indicator.classList.remove('bg-gray-300');
+            } else {
+                indicator.classList.remove('active', 'bg-red-500');
+                indicator.classList.add('bg-gray-300');
+            }
+        });
+    }
+    
+    // Кнопка "Назад"
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            currentSlide = currentSlide > 0 ? currentSlide - 1 : totalSlides - 1;
+            updateCarousel();
+        });
+    }
+    
+    // Кнопка "Вперед"
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            currentSlide = currentSlide < totalSlides - 1 ? currentSlide + 1 : 0;
+            updateCarousel();
+        });
+    }
+    
+    // Индикаторы
+    indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', function() {
+            currentSlide = index;
+            updateCarousel();
+        });
+    });
+    
+    // Автоматическая прокрутка каждые 5 секунд
+    setInterval(function() {
+        if (totalSlides > 1) {
+            currentSlide = currentSlide < totalSlides - 1 ? currentSlide + 1 : 0;
+            updateCarousel();
+        }
+    }, 5000);
+});
+</script>
+
+<!-- Product Slider JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Product Swiper
+    const productSwiper = new Swiper('.bannerCarousel', {
+        slidesPerView: 3,
+        spaceBetween: 30,
+        loop: true,
+        autoplay: {
+            delay: 5000,
+            disableOnInteraction: false,
+        },
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+            320: {
+                slidesPerView: 1,
+                spaceBetween: 20
+            },
+            768: {
+                slidesPerView: 2,
+                spaceBetween: 30
+            },
+            1024: {
+                slidesPerView: 3,
+                spaceBetween: 30
+            }
+        },
+        effect: 'coverflow',
+        coverflowEffect: {
+            rotate: 50,
+            stretch: 0,
+            depth: 100,
+            modifier: 1,
+            slideShadows: true,
+        },
+        on: {
+            slideChange: function () {
+                // Обновляем видимость информации при смене слайда
+                document.querySelectorAll('.bannerCarousel .info').forEach(info => {
+                    info.style.opacity = '0.3';
+                });
+                
+                const activeSlide = document.querySelector('.bannerCarousel .swiper-slide-active .info');
+                if (activeSlide) {
+                    activeSlide.style.opacity = '1';
+                }
+            },
+            init: function () {
+                // Инициализация при загрузке
+                setTimeout(() => {
+                    document.querySelectorAll('.bannerCarousel .info').forEach(info => {
+                        info.style.opacity = '0.3';
+                    });
+                    
+                    const activeSlide = document.querySelector('.bannerCarousel .swiper-slide-active .info');
+                    if (activeSlide) {
+                        activeSlide.style.opacity = '1';
+                    }
+                }, 200);
+            }
+        }
+    });
+});
+</script>
 
 {% endblock %}
