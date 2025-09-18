@@ -1,6 +1,6 @@
 {% extends 'base_ozon.html' %}
 
-{% block title %}{{ category.name }} - Ozon{% endblock %}
+{% block title %}{{ category.name }} - ShopList{% endblock %}
 
 {% block content %}
 <!-- Category Header -->
@@ -10,6 +10,14 @@
         <nav class="flex items-center space-x-2 text-sm text-gray-500 mb-4">
             <a href="/" class="hover:text-blue-600">Главная</a>
             <i class="fas fa-chevron-right text-xs"></i>
+            {% if category.parent %}
+                {% if category.parent.parent %}
+                    <a href="{% url 'category_view' category.parent.parent.slug %}" class="hover:text-blue-600">{{ category.parent.parent.name }}</a>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                {% endif %}
+                <a href="{% url 'category_view' category.parent.slug %}" class="hover:text-blue-600">{{ category.parent.name }}</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+            {% endif %}
             <span class="text-gray-900">{{ category.name }}</span>
         </nav>
 
@@ -25,6 +33,16 @@
                 <i class="fas fa-{{ category.icon|default:'tag' }} text-blue-600 text-2xl"></i>
             </div>
         </div>
+        
+        <!-- Back to Parent Category -->
+        {% if category.parent %}
+        <div class="mt-4">
+            <a href="{% url 'category_view' category.parent.slug %}" class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Назад к {{ category.parent.name }}
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -74,7 +92,7 @@
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {% for subcategory in subcategories %}
                 {% if subcategory.slug %}
-            <a href="{% url 'category_view' subcategory.slug %}" target="_blank" class="category-item group p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all">
+            <a href="{% url 'category_view' subcategory.slug %}" class="category-item group p-4 rounded-lg border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all">
                 <div class="text-center">
                     <div class="w-12 h-12 mx-auto mb-3 bg-blue-100 group-hover:bg-blue-200 rounded-lg flex items-center justify-center">
                         <i class="fas fa-{{ subcategory.icon|default:'tag' }} text-blue-600 text-xl"></i>

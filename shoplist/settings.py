@@ -196,6 +196,12 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Кодировка по умолчанию
+DEFAULT_CHARSET = 'utf-8'
+
+# Настройки для правильной обработки UTF-8
+FILE_CHARSET = 'utf-8'
+
 LANGUAGES = [
     ('ru', _('Русский')),
     ('en', _('English')),

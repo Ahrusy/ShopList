@@ -1,6 +1,5 @@
 from django.urls import path, include
-from . import views
-from . import cart_views, review_views, notification_views, analytics_views, promo_views, api_views
+from products import views, cart_views, review_views, notification_views, analytics_views, promo_views, api_views
 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')), # Встроенные URL-адреса Django для аутентификации
@@ -87,4 +86,7 @@ urlpatterns = [
     path('api/product-banners/<int:banner_id>/delete/', api_views.product_banner_delete, name='api_product_banner_delete'),
     path('api/product-banners/<int:banner_id>/toggle/', api_views.product_banner_toggle_active, name='api_product_banner_toggle'),
     path('api/product-banners/reorder/', api_views.product_banner_reorder, name='api_product_banner_reorder'),
+    
+    # API для каталога
+    path('api/catalog/categories/<int:category_id>/subcategories/', api_views.category_subcategories, name='api_category_subcategories'),
 ]

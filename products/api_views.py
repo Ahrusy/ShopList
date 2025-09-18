@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views import View
 import json
-from .models import ProductBanner
+from .models import ProductBanner, Category, Product
 from django.core.paginator import Paginator
 from django.db.models import Q
 
@@ -273,6 +273,94 @@ def product_banner_reorder(request):
             'success': False,
             'error': 'Неверный формат JSON'
         }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def category_subcategories(request, category_id):
+    """API для получения подкатегорий и товаров категории"""
+    try:
+        category = Category.objects.get(id=category_id, is_active=True)
+        
+        # Получаем подкатегории (2 уровень)
+        subcategories = category.children.filter(is_active=True).order_by('sort_order', 'slug')
+        
+        subcategories_data = []
+        for subcategory in subcategories:
+            # Получаем под-подкатегории (3 уровень)
+            subsubcategories = subcategory.children.filter(is_active=True).order_by('sort_order', 'slug')
+            
+            subsubcategories_data = []
+            for subsubcategory in subsubcategories:
+                subsubcategories_data.append({
+                    'id': subsubcategory.id,
+                    'name': subsubcategory.name,
+                    'slug': subsubcategory.slug,
+                    'description': subsubcategory.description,
+                })
+            
+            subcategories_data.append({
+                'id': subcategory.id,
+                'name': subcategory.name,
+                'slug': subcategory.slug,
+                'description': subcategory.description,
+                'subsubcategories': subsubcategories_data
+            })
+        
+        # Получаем популярные товары из этой категории и всех подкатегорий
+        category_ids = [category.id]
+        for subcategory in subcategories:
+            category_ids.append(subcategory.id)
+            for subsubcategory in subsubcategories:
+                category_ids.append(subsubcategory.id)
+        
+        featured_products = Product.objects.filter(
+            category_id__in=category_ids,
+            is_active=True
+        ).select_related('category').prefetch_related('images')[:12]
+        
+        products_data = []
+        for product in featured_products:
+            product_data = {
+                'id': product.id,
+                'name': product.name,
+                'slug': getattr(product, 'slug', ''),
+                'price': str(product.price),
+                'old_price': str(getattr(product, 'old_price', None)) if getattr(product, 'old_price', None) else None,
+                'category_name': product.category.name,
+                'image': None
+            }
+            
+            # Получаем первое изображение товара
+            if product.images.exists():
+                first_image = product.images.first()
+                if first_image and first_image.image:
+                    product_data['image'] = first_image.image.url
+            
+            products_data.append(product_data)
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'category': {
+                    'id': category.id,
+                    'name': category.name,
+                    'slug': category.slug,
+                    'description': category.description,
+                },
+                'subcategories': subcategories_data,
+                'featured_products': products_data
+            }
+        })
+    except Category.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Категория не найдена'
+        }, status=404)
     except Exception as e:
         return JsonResponse({
             'success': False,

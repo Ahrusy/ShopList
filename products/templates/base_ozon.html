@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{% csrf_token %}">
-    <title>{% block title %}ShopList - Сайт для публикации физических товаров и адресов магазинов{% endblock %}</title>
+    <title>{% block title %}ShopList - Интернет-магазин{% endblock %}</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -397,248 +397,11 @@
     <!-- Header -->
     <header class="header-gradient shadow-sm sticky top-0 z-50">
         <!-- Top Bar -->
-        <div class="topbar-gradient py-2 border-b border-gray-200">
-            <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12">
-                <div class="flex justify-between items-center text-sm text-gray-600">
-                    <div class="flex items-center space-x-6">
-                        <div class="relative group">
-                            <div class="flex items-center space-x-1 cursor-pointer hover:text-blue-600" onclick="toggleLocationDropdown()">
-                                <i class="fas fa-map-marker-alt text-blue-600"></i>
-                                <span id="currentLocation" class="font-medium">Москва</span>
-                                <i class="fas fa-chevron-down text-xs"></i>
-                            </div>
-                            
-                            <!-- Выпадающий список локаций -->
-                            <div id="locationDropdown" class="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 hidden">
-                                <div class="p-3">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <h3 class="text-sm font-medium text-gray-900">Выберите город</h3>
-                                        <button id="refreshLocation" class="text-blue-600 hover:text-blue-800 text-xs" title="Определить автоматически">
-                                            <i class="fas fa-sync-alt"></i>
-                                        </button>
-                                    </div>
-                                    <select id="locationSelect" class="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Загрузка...</option>
-                                    </select>
-                                    <div class="mt-2 text-xs text-gray-500">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        Мы автоматически определили ваш город
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <span class="flex items-center">
-                            <i class="fas fa-phone mr-1 text-blue-600"></i>
-                            8 800 234-56-78
-                        </span>
-                    </div>
-                    <div class="flex items-center space-x-6">
-                        <a href="#" class="hover:text-blue-600 flex items-center space-x-1">
-                            <i class="fas fa-store text-green-600"></i>
-                            <span>Магазины</span>
-                        </a>
-                        <a href="#" class="hover:text-blue-600 flex items-center space-x-1">
-                            <i class="fas fa-tags text-blue-600"></i>
-                            <span>Категории</span>
-                        </a>
-                        <a href="#" class="hover:text-blue-600 flex items-center space-x-1">
-                            <i class="fas fa-map-marker-alt text-purple-600"></i>
-                            <span>Адреса</span>
-                        </a>
-                        <a href="#" class="hover:text-blue-600 flex items-center space-x-1">
-                            <i class="fas fa-user-tie text-orange-600"></i>
-                            <span>Для менеджеров</span>
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </a>
-                        
-                        <!-- Delivery Address -->
-                        <div class="flex items-center space-x-1 text-sm">
-                            <i class="fas fa-map-marker-alt text-blue-600"></i>
-                            <span>Центральная ул., 73</span>
-                        </div>
-                        
-                        <!-- Language Switcher -->
-                        <div class="relative group">
-                            <button class="flex items-center space-x-1 hover:text-blue-600">
-                                <i class="fas fa-globe"></i>
-                                <span>{{ LANGUAGE_CODE|upper }}</span>
-                                <i class="fas fa-chevron-down text-xs"></i>
-                            </button>
-                            <div class="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                <a href="{% url 'set_language' %}?language=ru" class="block px-4 py-2 text-sm hover:bg-gray-100 {% if LANGUAGE_CODE == 'ru' %}bg-blue-50 text-blue-600{% endif %}">
-                                    <i class="fas fa-flag mr-2"></i>Русский
-                                </a>
-                                <a href="{% url 'set_language' %}?language=en" class="block px-4 py-2 text-sm hover:bg-gray-100 {% if LANGUAGE_CODE == 'en' %}bg-blue-50 text-blue-600{% endif %}">
-                                    <i class="fas fa-flag mr-2"></i>English
-                                </a>
-                                <a href="{% url 'set_language' %}?language=ar" class="block px-4 py-2 text-sm hover:bg-gray-100 {% if LANGUAGE_CODE == 'ar' %}bg-blue-50 text-blue-600{% endif %}">
-                                    <i class="fas fa-flag mr-2"></i>العربية
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Topbar -->
+        {% include 'components/topbar.html' %}
 
-        <!-- Main Header -->
-        <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-4">
-            <div class="flex items-center justify-between">
-                <!-- Logo and Catalog -->
-                <div class="flex items-center space-x-4 w-80">
-                    <a href="/" class="text-3xl font-bold text-blue-600 hover:text-blue-700">
-                        ShopList
-                    </a>
-                    
-                    <!-- Catalog Button -->
-                    <div class="relative group">
-                        <button id="catalogButton" class="flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-                            </svg>
-                            <span class="font-medium">Каталог</span>
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </button>
-                    
-                    <!-- Mega Menu -->
-                    <div id="catalogMegaMenu" class="absolute top-full left-0 mt-1 w-screen max-w-7xl bg-white border border-gray-200 rounded-lg shadow-2xl z-50 hidden">
-                        <div class="flex h-[500px]">
-                            <!-- Left Sidebar - Categories -->
-                            <div class="w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto">
-                                <div class="p-4">
-                                    <div class="mb-4">
-                                        <div class="relative">
-                                            <input type="text" id="catalogSearch" placeholder="Поиск по каталогу..." class="w-full p-3 pl-10 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                                        </div>
-                                    </div>
-                                    <ul class="space-y-1">
-                                        {% for category in catalog_categories %}
-                                            <li>
-                                                <a href="#" class="catalog-category-link flex items-center p-3 text-sm hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors group" data-category-id="{{ category.id }}">
-                                                    {% if category.icon %}
-                                                        <i class="{{ category.icon }} mr-3 text-gray-600 w-5 group-hover:text-blue-600"></i>
-                                                    {% endif %}
-                                                    <span class="font-medium">{{ category.name }}</span>
-                                                    <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-blue-600"></i>
-                                                </a>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                            
-                            <!-- Right Content - Subcategories -->
-                            <div class="flex-1 overflow-y-auto bg-white">
-                                <div class="p-8">
-                                    <div class="flex items-center justify-between mb-8">
-                                        <h2 id="categoryTitle" class="text-3xl font-bold text-gray-900">Выберите категорию</h2>
-                                        <button id="closeCatalog" class="text-gray-400 hover:text-gray-600 text-3xl p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div id="categoryContent" class="space-y-8">
-                                        <div class="text-center text-gray-500 py-16">
-                                            <i class="fas fa-mouse-pointer text-6xl mb-6 text-gray-300"></i>
-                                            <p class="text-lg">Выберите категорию слева для просмотра подкатегорий</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Search -->
-                <div class="w-[800px] min-w-[700px] mr-8" style="width: 800px !important; min-width: 700px !important;">
-                    <div class="relative w-full">
-                        <form method="GET" action="/" class="flex w-full">
-                            <input 
-                                type="text" 
-                                name="q" 
-                                placeholder="Искать на ShopList"
-                                value="{{ search_query|default:'' }}"
-                                class="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-0">
-                            <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- User Actions -->
-                <div class="flex items-center space-x-8 w-80 justify-end">
-                    <!-- Profile/Login -->
-                    <div class="relative group">
-                        {% if user.is_authenticated %}
-                            <!-- Authenticated User -->
-                            <button class="flex flex-col items-center text-gray-700 hover:text-blue-600">
-                                <div class="relative">
-                                    <i class="fas fa-user text-2xl"></i>
-                                    <span class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">21</span>
-                                </div>
-                                <span class="text-xs mt-1">{{ user.first_name|default:user.username }}</span>
-                            </button>
-                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                <div class="px-4 py-2 border-b border-gray-100">
-                                    <p class="text-sm font-medium text-gray-900">Личный кабинет</p>
-                                    <p class="text-xs text-gray-500">{{ user.email }}</p>
-                                </div>
-                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                    <i class="fas fa-box mr-2"></i>Мои заказы
-                                </a>
-                                 <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                     <i class="fas fa-heart mr-2"></i>Избранное
-                                 </a>
-                                <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                    <i class="fas fa-cog mr-2"></i>Настройки
-                                </a>
-                                <hr class="my-1">
-                                 <a href="{% url 'auth:logout' %}" class="block px-4 py-2 text-sm hover:bg-gray-100 text-red-600">
-                                     <i class="fas fa-sign-out-alt mr-2"></i>Выйти
-                                 </a>
-                            </div>
-                        {% else %}
-                            <!-- Not Authenticated User -->
-                            <button class="flex flex-col items-center text-gray-700 hover:text-blue-600">
-                                <i class="fas fa-user text-2xl"></i>
-                                <span class="text-xs mt-1">Войти</span>
-                            </button>
-                             <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                 <a href="{% url 'auth:login' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                     <i class="fas fa-sign-in-alt mr-2"></i>Войти
-                                 </a>
-                                 <a href="{% url 'auth:register' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                     <i class="fas fa-user-plus mr-2"></i>Зарегистрироваться
-                                 </a>
-                             </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Orders -->
-                    <a href="{% url 'order_list' %}" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-box text-2xl"></i>
-                        <span class="text-xs mt-1">Заказы</span>
-                    </a>
-                    
-                    <!-- Favorites -->
-                    <a href="#" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-heart text-2xl"></i>
-                        <span class="text-xs mt-1">Избранное</span>
-                    </a>
-                    
-                    <!-- Cart -->
-                    <a href="{% url 'cart' %}" class="relative flex flex-col items-center text-gray-700 hover:text-blue-600">
-                        <div class="relative">
-                            <i class="fas fa-shopping-cart text-2xl"></i>
-                            <span class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">1</span>
-                        </div>
-                        <span class="text-xs mt-1">Корзина</span>
-                    </a>
-                </div>
-            </div>
-        </div>
+        <!-- Header -->
+        {% include 'components/header.html' %}
 
     </header>
 
@@ -679,58 +442,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer-gradient text-white py-12">
-        <div class="max-w-9xl mx-auto px-6 sm:px-8 lg:px-12">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">ShopList</h3>
-                    <p class="text-gray-400">Сайт для публикации физических товаров и адресов магазинов</p>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Покупателям</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">Как найти товар</a></li>
-                        <li><a href="#" class="hover:text-white">Адреса магазинов</a></li>
-                        <li><a href="#" class="hover:text-white">Наличие товаров</a></li>
-                        <li><a href="#" class="hover:text-white">Контакты</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">RetailNet Solutions</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">О компании</a></li>
-                        <li><a href="#" class="hover:text-white">IT-интеграция</a></li>
-                        <li><a href="#" class="hover:text-white">Розничные сети</a></li>
-                        <li><a href="#" class="hover:text-white">Контакты</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Для магазинов</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">Добавить товары</a></li>
-                        <li><a href="#" class="hover:text-white">Управление ассортиментом</a></li>
-                        <li><a href="#" class="hover:text-white">Стать партнером</a></li>
-                        <li><a href="#" class="hover:text-white">Поддержка</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Контакты</h4>
-                    <div class="space-y-2 text-gray-400">
-                        <p><i class="fas fa-phone mr-2"></i>8 800 234-56-78</p>
-                        <p><i class="fas fa-envelope mr-2"></i>info@shoplist.ru</p>
-                        <div class="flex space-x-4 mt-4">
-                            <a href="#" class="text-2xl hover:text-white"><i class="fab fa-vk"></i></a>
-                            <a href="#" class="text-2xl hover:text-white"><i class="fab fa-telegram"></i></a>
-                            <a href="#" class="text-2xl hover:text-white"><i class="fab fa-youtube"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 ShopList by RetailNet Solutions. Все права защищены.</p>
-            </div>
-        </div>
-    </footer>
+    {% include 'components/footer.html' %}
 
     <!-- Notifications -->
     <div id="notifications" class="fixed top-20 right-4 z-50 space-y-2"></div>
@@ -885,6 +597,7 @@
             {{ category.id }}: {
                 name: "{{ category.name|escapejs }}",
                 icon: "{{ category.icon|escapejs }}",
+                slug: "{{ category.slug|escapejs }}",
                 subcategories: []
             }{% if not forloop.last %},{% endif %}
             {% endfor %}

@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import translation
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from django.views.decorators.http import require_http_methods
 from django.db.models import F
 from decimal import Decimal
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
@@ -37,9 +38,22 @@ def index(request):
     ).order_by('sort_order')[:8]
     
     # Фильтрация по категории
-    category_id = request.GET.get('category')
-    if category_id:
-        products = products.filter(category_id=category_id)
+    category_param = request.GET.get('category')
+    is_main_page = not category_param  # Главная страница, если нет параметра category
+    
+    
+    if category_param:
+        # Убираем возможные суффиксы типа :1
+        category_param = category_param.split(':')[0]
+        
+        # Пытаемся найти категорию по ID или slug
+        try:
+            # Если это число, ищем по ID
+            category_id = int(category_param)
+            products = products.filter(category_id=category_id)
+        except ValueError:
+            # Если не число, ищем по slug
+            products = products.filter(category__slug=category_param)
     
     # Поиск
     search_query = request.GET.get('q')
@@ -62,16 +76,90 @@ def index(request):
         show_in_megamenu=True
     ).order_by('sort_order', 'slug')
     
+    # Если это страница категории, перенаправляем на правильный URL категории
+    if not is_main_page and category_param:
+        from django.shortcuts import redirect
+        from django.urls import reverse
+        try:
+            category = Category.objects.get(slug=category_param)
+            # Перенаправляем на URL категории
+            return redirect('category', category_slug=category.slug)
+        except Category.DoesNotExist:
+            # Если категория не найдена, продолжаем с обычным шаблоном
+            pass
+    
+    # Главная страница
     context = {
         'products': products,
         'categories': categories,
         'root_categories': root_categories,
         'catalog_categories': root_categories,  # Для мегаменю
         'search_query': search_query,
-        'banners': banners,
-        'slider_products': product_banners,
+        'is_main_page': is_main_page,
+        'category_param': category_param,
+        'banners': banners if is_main_page else [],
+        'slider_products': product_banners if is_main_page else [],
     }
     return render(request, 'index_ozon.html', context)
+
+
+@require_http_methods(["GET"])
+def load_more_products(request):
+    """AJAX endpoint для загрузки следующих страниц товаров"""
+    page = request.GET.get('page', 1)
+    search_query = request.GET.get('q', '')
+    category_param = request.GET.get('category', '')
+    
+    try:
+        page = int(page)
+    except (ValueError, TypeError):
+        page = 1
+    
+    # Получаем товары (такая же логика как в index)
+    products = Product.objects.filter(is_active=True).select_related('category', 'seller').prefetch_related('images', 'tags')
+    
+    # Фильтрация по категории
+    if category_param:
+        category_param = category_param.split(':')[0]
+        try:
+            if category_param.isdigit():
+                category = Category.objects.get(id=category_param)
+            else:
+                category = Category.objects.get(slug=category_param)
+            products = products.filter(category=category)
+        except Category.DoesNotExist:
+            pass
+    
+    # Поиск
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(tags__name__icontains=search_query)
+        ).distinct()
+    
+    # Сортировка
+    products = products.order_by('-views_count', '-reviews_count')
+    
+    # Пагинация
+    paginator = Paginator(products, 20)
+    try:
+        products_page = paginator.get_page(page)
+    except:
+        return JsonResponse({'error': 'Invalid page'}, status=400)
+    
+    # Рендерим HTML для товаров
+    products_html = render_to_string('products/includes/product_cards.html', {
+        'products': products_page
+    })
+    
+    return JsonResponse({
+        'html': products_html,
+        'has_next': products_page.has_next(),
+        'next_page': products_page.next_page_number() if products_page.has_next() else None,
+        'current_page': page,
+        'total_pages': paginator.num_pages
+    })
 
 
 def category_view(request, category_slug):

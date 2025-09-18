@@ -1,15 +1,16 @@
 {% extends 'base_ozon.html' %}
 {% load static %}
 
-{% block title %}Ozon - интернет-магазин{% endblock %}
+{% block title %}ShopList - интернет-магазин{% endblock %}
 
 {% block extra_css %}
 {% endblock %}
 
 {% block content %}
 
-<!-- Banners Section -->
-{% if banners %}
+
+<!-- Banners Section - только на главной странице -->
+{% if is_main_page and banners|length > 0 %}
 <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-6">
     <div class="relative overflow-hidden rounded-lg">
         <!-- Карусель баннеров - показываем 3 баннера одновременно -->
@@ -55,8 +56,8 @@
 </div>
 {% endif %}
 
-<!-- Product Slider Section -->
-{% if slider_products %}
+<!-- Product Slider Section - только на главной странице -->
+{% if is_main_page and slider_products|length > 0 %}
 <div class="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
     <div class="product-slider-container">
         <div class="text-center mb-8">
@@ -104,7 +105,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <!-- Products Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {% for product in products %}
                 {% include 'components/product_card.html' %}
             {% empty %}
@@ -116,43 +117,29 @@
             {% endfor %}
         </div>
 
-        <!-- Pagination -->
-        {% if products.has_other_pages %}
-        <div class="mt-12 flex justify-center">
-            <nav class="flex items-center space-x-2">
-                {% if products.has_previous %}
-                    <a href="?page={{ products.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if category_id %}&category={{ category_id }}{% endif %}" 
-                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                {% endif %}
-
-                {% for num in products.paginator.page_range %}
-                    {% if products.number == num %}
-                        <span class="px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-md">
-                            {{ num }}
-                        </span>
-                    {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
-                        <a href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if category_id %}&category={{ category_id }}{% endif %}" 
-                           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                            {{ num }}
-                        </a>
-                    {% endif %}
-                {% endfor %}
-
-                {% if products.has_next %}
-                    <a href="?page={{ products.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if category_id %}&category={{ category_id }}{% endif %}" 
-                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                {% endif %}
-            </nav>
+        <!-- Loading indicator -->
+        <div id="loading-indicator" class="hidden mt-8 text-center">
+            <div class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Загрузка товаров...
+            </div>
         </div>
-        {% endif %}
+
+        <!-- End of products indicator -->
+        <div id="end-indicator" class="hidden mt-8 text-center">
+            <div class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500">
+                <i class="fas fa-check-circle mr-2"></i>
+                Все товары загружены
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- JavaScript для карусели баннеров -->
+<!-- JavaScript для карусели баннеров - только на главной странице -->
+{% if not category_param %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const carousel = document.getElementById('bannerCarousel');
@@ -214,8 +201,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 5000);
 });
 </script>
+{% endif %}
 
-<!-- Product Slider JavaScript -->
+<!-- Product Slider JavaScript - только на главной странице -->
+{% if not category_param %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Product Swiper
@@ -284,6 +273,113 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+});
+</script>
+{% endif %}
+
+<!-- Infinite Scroll JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentPage = 1;
+    let isLoading = false;
+    let hasMoreProducts = true;
+    
+    // Получаем параметры из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchQuery = urlParams.get('q') || '';
+    const categoryParam = urlParams.get('category') || '';
+    
+    // Функция для загрузки следующих товаров
+    function loadMoreProducts() {
+        if (isLoading || !hasMoreProducts) return;
+        
+        isLoading = true;
+        currentPage++;
+        
+        // Показываем индикатор загрузки
+        const loadingIndicator = document.getElementById('loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.classList.remove('hidden');
+        }
+        
+        // Формируем URL для AJAX запроса
+        const loadMoreUrl = new URL('{% url "load_more_products" %}', window.location.origin);
+        loadMoreUrl.searchParams.set('page', currentPage);
+        if (searchQuery) loadMoreUrl.searchParams.set('q', searchQuery);
+        if (categoryParam) loadMoreUrl.searchParams.set('category', categoryParam);
+        
+        // Выполняем AJAX запрос
+        fetch(loadMoreUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    // Добавляем новые товары в сетку
+                    const productsGrid = document.getElementById('products-grid');
+                    if (productsGrid) {
+                        productsGrid.insertAdjacentHTML('beforeend', data.html);
+                    }
+                }
+                
+                // Обновляем состояние
+                hasMoreProducts = data.has_next;
+                
+                // Показываем индикатор окончания, если товары закончились
+                if (!hasMoreProducts) {
+                    const endIndicator = document.getElementById('end-indicator');
+                    if (endIndicator) {
+                        endIndicator.classList.remove('hidden');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки товаров:', error);
+                // Возвращаем номер страницы назад при ошибке
+                currentPage--;
+            })
+            .finally(() => {
+                isLoading = false;
+                // Скрываем индикатор загрузки
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('hidden');
+                }
+            });
+    }
+    
+    // Обработчик прокрутки
+    function handleScroll() {
+        // Проверяем, достиг ли пользователь нижней части страницы
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        
+        // Загружаем новые товары, когда пользователь прокрутил на 80% страницы
+        if (scrollTop + windowHeight >= documentHeight * 0.8) {
+            loadMoreProducts();
+        }
+    }
+    
+    // Обработчик нажатия клавиш
+    function handleKeyDown(event) {
+        // Загружаем при нажатии стрелки вниз
+        if (event.key === 'ArrowDown' || event.key === 'PageDown') {
+            loadMoreProducts();
+        }
+    }
+    
+    // Добавляем обработчики событий
+    window.addEventListener('scroll', handleScroll);
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Проверяем, есть ли еще товары для загрузки при загрузке страницы
+    {% if products.has_next %}
+        hasMoreProducts = true;
+    {% else %}
+        hasMoreProducts = false;
+        const endIndicator = document.getElementById('end-indicator');
+        if (endIndicator) {
+            endIndicator.classList.remove('hidden');
+        }
+    {% endif %}
 });
 </script>
 
