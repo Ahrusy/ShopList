@@ -18,7 +18,7 @@
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <form class="space-y-6" action="{% url 'auth:register' %}" method="POST">
+            <form class="space-y-6" id="registrationForm">
                 {% csrf_token %}
                 
                 <!-- Переключатель способов регистрации -->
@@ -56,11 +56,46 @@
                 </div>
 
                 <div id="emailFields" class="hidden">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div>
+                            <label for="last_name_email" class="block text-sm font-medium text-gray-700">{% trans "Фамилия" %}</label>
+                            <div class="mt-1">
+                                <input id="last_name_email" name="last_name_email" type="text" autocomplete="family-name" required
+                                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="first_name_email" class="block text-sm font-medium text-gray-700">{% trans "Имя" %}</label>
+                            <div class="mt-1">
+                                <input id="first_name_email" name="first_name_email" type="text" autocomplete="given-name" required
+                                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="middle_name_email" class="block text-sm font-medium text-gray-700">{% trans "Отчество" %}</label>
+                            <div class="mt-1">
+                                <input id="middle_name_email" name="middle_name_email" type="text" autocomplete="additional-name"
+                                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700">{% trans "Email адрес" %}</label>
                         <div class="mt-1">
                             <input id="email" name="email" type="email" autocomplete="email" required
                                    class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="phone_email" class="block text-sm font-medium text-gray-700">{% trans "Телефон" %}</label>
+                        <div class="mt-1">
+                            <input id="phone_email" name="phone_email" type="tel" autocomplete="tel" required
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   placeholder="+7 (999) 123-45-67">
                         </div>
                     </div>
 
@@ -79,6 +114,19 @@
                                    class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                         </div>
                     </div>
+
+                    <div id="emailCodeField" class="hidden">
+                        <label for="email_code" class="block text-sm font-medium text-gray-700">{% trans "Код подтверждения" %}</label>
+                        <div class="mt-1">
+                            <input id="email_code" name="email_code" type="text" maxlength="6"
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   placeholder="Введите код из письма">
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="sendEmailCodeBtn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                        {% trans "Отправить код подтверждения" %}
+                    </button>
                 </div>
 
                 <div>
@@ -150,6 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const registrationMethod = document.getElementById('registration_method');
     const sendSmsBtn = document.getElementById('sendSmsBtn');
     const smsCodeField = document.getElementById('smsCodeField');
+    const sendEmailCodeBtn = document.getElementById('sendEmailCodeBtn');
+    const emailCodeField = document.getElementById('emailCodeField');
 
     function switchTab(method) {
         if (method === 'phone') {
@@ -196,6 +246,142 @@ document.addEventListener('DOMContentLoaded', function() {
             sendSmsBtn.disabled = false;
             sendSmsBtn.textContent = '{% trans "Получить код по СМС" %}';
         }, 30000);
+    });
+
+    // Email functionality
+    sendEmailCodeBtn.addEventListener('click', function() {
+        const email = document.getElementById('email').value;
+        const first_name = document.getElementById('first_name_email').value;
+        const last_name = document.getElementById('last_name_email').value;
+        const middle_name = document.getElementById('middle_name_email').value;
+        const phone = document.getElementById('phone_email').value;
+        const password = document.getElementById('password').value;
+        const password_confirm = document.getElementById('password_confirm').value;
+
+        if (!email || !first_name || !last_name || !phone || !password || !password_confirm) {
+            alert('{% trans "Пожалуйста, заполните все обязательные поля." %}');
+            return;
+        }
+
+        if (password !== password_confirm) {
+            alert('{% trans "Пароли не совпадают." %}');
+            return;
+        }
+
+        if (password.length < 8) {
+            alert('{% trans "Пароль должен содержать минимум 8 символов." %}');
+            return;
+        }
+
+        // Отправляем запрос на сервер
+        fetch('{% url "auth:send_email_code" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                email: email,
+                first_name: first_name,
+                last_name: last_name,
+                middle_name: middle_name,
+                phone: phone,
+                password: password,
+                password_confirm: password_confirm
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show email code field
+                emailCodeField.classList.remove('hidden');
+                
+                // Disable button temporarily
+                sendEmailCodeBtn.disabled = true;
+                sendEmailCodeBtn.textContent = '{% trans "Код отправлен" %}';
+                
+                setTimeout(() => {
+                    sendEmailCodeBtn.disabled = false;
+                    sendEmailCodeBtn.textContent = '{% trans "Отправить код подтверждения" %}';
+                }, 60000);
+                
+                alert(data.message);
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('{% trans "Произошла ошибка при отправке кода." %}');
+        });
+    });
+
+    // Обработка отправки формы регистрации
+    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const method = document.getElementById('registration_method').value;
+        
+        if (method === 'email') {
+            // Для email регистрации отправляем данные с кодом подтверждения
+            const email = document.getElementById('email').value;
+            const email_code = document.getElementById('email_code').value;
+            
+            if (!email || !email_code) {
+                alert('{% trans "Введите email и код подтверждения." %}');
+                return;
+            }
+            
+            fetch('{% url "auth:register" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    registration_method: 'email',
+                    email: email,
+                    email_code: email_code
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('{% trans "Произошла ошибка при регистрации." %}');
+            });
+        } else {
+            // Для регистрации по телефону используем стандартную отправку формы
+            const formData = new FormData(this);
+            fetch('{% url "auth:register" %}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('{% trans "Произошла ошибка при регистрации." %}');
+            });
+        }
     });
 });
 </script>

@@ -1,0 +1,122 @@
+{% extends 'profile/base.html' %}
+{% load static %}
+
+{% block profile_content %}
+<div>
+    <!-- Header -->
+    <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 8px;">Мои заказы</h1>
+        <p style="color: #666; font-size: 14px;">История ваших покупок</p>
+    </div>
+    
+    <!-- Orders List -->
+    {% if orders %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for order in orders %}
+            <div class="order-card">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                            <div>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 4px;">Заказ #{{ order.id }}</h3>
+                                <p style="font-size: 12px; color: #666;">{{ order.created_at|date:"d.m.Y в H:i" }}</p>
+                            </div>
+                            <span class="order-status status-{{ order.status }}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        <!-- Order Items -->
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+                            {% for item in order.items.all %}
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                                {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
+                                {% else %}
+                                    <div style="width: 60px; height: 60px; background: #f5f5f5; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-image" style="color: #ccc;"></i>
+                                    </div>
+                                {% endif %}
+                                <div style="flex: 1;">
+                                    <h4 style="font-weight: 500; color: #333; margin-bottom: 4px;">{{ item.product.name }}</h4>
+                                    <p style="font-size: 12px; color: #666;">Количество: {{ item.quantity }}</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p style="font-weight: 600; color: #333;">{{ item.price }} ₽</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Order Summary -->
+                        <div style="padding-top: 16px; border-top: 1px solid #e0e0e0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-size: 12px; color: #666;">
+                                    <p>Товаров: {{ order.items.count }}</p>
+                                    <p>Статус оплаты: {{ order.get_payment_status_display }}</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p style="font-size: 18px; font-weight: bold; color: #333;">Итого: {{ order.total_amount }} ₽</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-left: 24px; display: flex; flex-direction: column; gap: 8px;">
+                        <a href="{% url 'order_detail' order.id %}" style="padding: 8px 16px; background: #0066cc; color: white; text-align: center; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">
+                            Подробнее
+                        </a>
+                        {% if order.status == 'delivered' %}
+                        <button style="padding: 8px 16px; border: 1px solid #ddd; color: #666; border-radius: 4px; background: white; cursor: pointer; font-size: 12px;">
+                            Повторить заказ
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if orders.has_other_pages %}
+        <div style="display: flex; justify-content: center; margin-top: 32px;">
+            <nav style="display: flex; gap: 8px;">
+                {% if orders.has_previous %}
+                    <a href="?page={{ orders.previous_page_number }}" style="padding: 8px 12px; border: 1px solid #ddd; color: #666; border-radius: 4px; text-decoration: none;">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% endif %}
+                
+                {% for num in orders.paginator.page_range %}
+                    {% if orders.number == num %}
+                        <span style="padding: 8px 12px; background: #0066cc; color: white; border-radius: 4px;">{{ num }}</span>
+                    {% else %}
+                        <a href="?page={{ num }}" style="padding: 8px 12px; border: 1px solid #ddd; color: #666; border-radius: 4px; text-decoration: none;">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if orders.has_next %}
+                    <a href="?page={{ orders.next_page_number }}" style="padding: 8px 12px; border: 1px solid #ddd; color: #666; border-radius: 4px; text-decoration: none;">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        
+    {% else %}
+        <!-- Empty State -->
+        <div style="text-align: center; padding: 48px 24px;">
+            <div style="width: 80px; height: 80px; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                <i class="fas fa-shopping-bag" style="font-size: 32px; color: #ccc;"></i>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;">У вас пока нет заказов</h3>
+            <p style="color: #666; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">Начните покупки, чтобы увидеть историю заказов здесь. Все ваши заказы будут отображаться на этой странице.</p>
+            <a href="{% url 'index' %}" style="display: inline-flex; align-items: center; padding: 12px 24px; background: #0066cc; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                <i class="fas fa-shopping-cart" style="margin-right: 8px;"></i>
+                Начать покупки
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

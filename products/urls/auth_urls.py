@@ -4,7 +4,8 @@ from ..auth_views import (
     register_view, 
     login_view, 
     logout_view, 
-    send_sms_code
+    send_sms_code,
+    send_email_code
 )
 
 app_name = 'auth'
@@ -18,4 +19,5 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('test/', test_auth_view, name='test'),
     path('api/send-sms/', send_sms_code, name='send_sms'),
+    path('send-email-code/', send_email_code, name='send_email_code'),
 ]

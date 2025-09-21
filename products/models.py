@@ -22,6 +22,7 @@ class User(AbstractUser):
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user', verbose_name=_("Роль"))
     phone = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name=_("Телефон"))
+    middle_name = models.CharField(max_length=30, blank=True, null=True, verbose_name=_("Отчество"))
     favorites = models.ManyToManyField('Product', related_name='favorited_by', blank=True, verbose_name=_("Избранные товары"))
     
     groups = models.ManyToManyField(

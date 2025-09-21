@@ -23,6 +23,8 @@
     <!-- Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     
+    {% block extra_head %}{% endblock %}
+    
     <style>
         .max-w-8xl {
             max-width: 88rem; /* 1408px */
@@ -51,11 +53,128 @@
         .product-card {
             transition: all 0.3s ease;
             border: 1px solid #E5E7EB;
+            width: 220px;
+            min-height: 450px;
         }
         .product-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             border-color: #005BFF;
+        }
+        
+        /* Product grid adjustments */
+        #products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+            gap: 20px !important;
+        }
+        
+        /* Product card content visibility - максимальный приоритет */
+        .product-card p[style*="color: #2563eb"] {
+            color: #2563eb !important;
+            font-weight: 600 !important;
+            font-size: 12px !important;
+        }
+        
+        .product-card .rating-stars {
+            color: #fbbf24 !important;
+        }
+        
+        .product-card .rating-stars i {
+            color: #fbbf24 !important;
+            font-size: 12px !important;
+        }
+        
+        .product-card button[onclick*="addToCart"] {
+            background-color: #2563eb !important;
+            font-weight: 600 !important;
+            font-size: 12px !important;
+        }
+        
+        .product-card button[onclick*="addToCart"]:hover {
+            background-color: #1d4ed8 !important;
+        }
+        
+        /* Rating clickable area */
+        .product-card a[href*="product_detail"] {
+            text-decoration: none !important;
+        }
+        
+        .product-card a[href*="product_detail"]:hover {
+            background-color: #f9fafb !important;
+        }
+        
+        /* Ensure all text is visible */
+        .product-card p, .product-card h3, .product-card div {
+            color: inherit !important;
+        }
+        
+        /* Force visibility of all elements */
+        .product-card * {
+            visibility: visible !important;
+        }
+        
+        /* Supplier name specific styling */
+        .product-card p.text-xs.font-semibold {
+            color: #2563eb !important;
+            font-weight: 600 !important;
+            font-size: 12px !important;
+        }
+        
+        /* Product name styling */
+        .product-card h3 a {
+            color: #1f2937 !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        
+        /* Rating text styling */
+        .product-card .text-xs.text-gray-700 {
+            color: #374151 !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+        }
+        
+        .product-card .text-xs.text-gray-500 {
+            color: #6b7280 !important;
+            font-size: 12px !important;
+        }
+        
+        /* Stock status styling - выделенный фон */
+        .product-card span[style*="background: #dcfce7"] {
+            color: #059669 !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            background: #dcfce7 !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+        }
+        
+        .product-card span[style*="background: #fef2f2"] {
+            color: #dc2626 !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            background: #fef2f2 !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+        }
+        
+        /* Price styling - крупная и выделенная */
+        .product-card div[style*="background: #f3f4f6"] {
+            font-size: 16px !important;
+            font-weight: 800 !important;
+            background: #f3f4f6 !important;
+            padding: 4px 8px !important;
+            border-radius: 6px !important;
+        }
+        
+        /* Red price text */
+        .product-card div[style*="color: #dc2626"] {
+            color: #dc2626 !important;
+        }
+        
+        /* Green price text */
+        .product-card div[style*="color: #059669"] {
+            color: #059669 !important;
         }
         .price-current {
             color: #FF6B35;

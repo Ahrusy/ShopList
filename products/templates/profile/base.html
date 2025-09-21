@@ -1,0 +1,475 @@
+{% extends 'base_ozon.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .profile-container {
+        display: flex !important;
+        background: #f5f5f5 !important;
+        min-height: calc(100vh - 120px) !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+    
+    .profile-sidebar {
+        background: white !important;
+        border-right: 1px solid #e0e0e0 !important;
+        min-height: calc(100vh - 120px) !important;
+        width: 280px !important;
+        flex-shrink: 0 !important;
+        overflow-y: auto !important;
+        z-index: 10 !important;
+        position: relative !important;
+    }
+    
+    .profile-main {
+        flex: 1 !important;
+        padding: 24px !important;
+        background: #f5f5f5 !important;
+        min-height: calc(100vh - 120px) !important;
+        width: calc(100% - 280px) !important;
+    }
+    
+    .profile-nav-section {
+        margin-bottom: 24px;
+    }
+    
+    .profile-nav-section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        padding: 0 16px;
+    }
+    
+    .profile-nav-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        color: #333;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+    
+    .profile-nav-item:hover {
+        background: #f0f0f0;
+        color: #0066cc;
+    }
+    
+    .profile-nav-item.active {
+        background: #e6f3ff;
+        color: #0066cc;
+        border-left-color: #0066cc;
+        font-weight: 500;
+    }
+    
+    .profile-nav-item i {
+        width: 20px;
+        margin-right: 12px;
+        font-size: 16px;
+    }
+    
+    .profile-nav-badge {
+        background: #ff4444;
+        color: white;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: auto;
+        min-width: 18px;
+        text-align: center;
+    }
+    
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        background: #0066cc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0 auto 12px;
+    }
+    
+    .user-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        text-align: center;
+        margin-bottom: 4px;
+    }
+    
+    .user-email {
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+        margin-bottom: 16px;
+    }
+    
+    .edit-profile-link {
+        font-size: 12px;
+        color: #0066cc;
+        text-decoration: none;
+        text-align: center;
+        display: block;
+        margin-bottom: 24px;
+    }
+    
+    .edit-profile-link:hover {
+        text-decoration: underline;
+    }
+    
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .stats-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+    }
+    
+    .stats-card-icon {
+        width: 40px;
+        height: 40px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        font-size: 18px;
+        color: #666;
+    }
+    
+    .stats-card-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 4px;
+    }
+    
+    .stats-card-label {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .order-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .order-info {
+        flex: 1;
+    }
+    
+    .order-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 4px;
+    }
+    
+    .order-date {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .order-status {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-confirmed {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-processing {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-shipped {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-delivered {
+        background: #d1f2eb;
+        color: #0f5132;
+    }
+    
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .page-header {
+        margin-bottom: 24px;
+    }
+    
+    .page-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+    }
+    
+    .page-subtitle {
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+    }
+    
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        background: #f5f5f5;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+    }
+    
+    .empty-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+    
+    .empty-description {
+        color: #666;
+        margin-bottom: 24px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .btn-large {
+        display: inline-flex;
+        align-items: center;
+        padding: 12px 24px;
+        background: #0066cc;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    
+    @media (max-width: 768px) {
+        .profile-container {
+            flex-direction: column !important;
+        }
+        
+        .profile-sidebar {
+            width: 100% !important;
+            min-height: auto !important;
+        }
+        
+        .profile-main {
+            flex: none !important;
+            width: 100% !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- Sidebar -->
+    <div class="profile-sidebar">
+        <!-- User Info -->
+        <div style="padding: 24px 16px; border-bottom: 1px solid #e0e0e0;">
+            <div class="user-avatar">
+                {{ user.first_name|first|default:user.username|first|upper }}
+            </div>
+            <div class="user-name">
+                {{ user.first_name|default:user.username }}
+                {% if user.last_name %} {{ user.last_name }}{% endif %}
+            </div>
+            <div class="user-email">{{ user.email }}</div>
+            <a href="{% url 'profile:edit' %}" class="edit-profile-link">Изменить профиль</a>
+        </div>
+        
+        <!-- Navigation -->
+        <div style="padding: 16px 0;">
+             <!-- Личная информация -->
+             <div class="profile-nav-section">
+                 <div class="profile-nav-section-title">Личная информация</div>
+                 <a href="{% url 'profile:dashboard' %}" class="profile-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                     <i class="fas fa-home"></i>
+                     Главная
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-credit-card"></i>
+                     ShopList Карта
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-wallet"></i>
+                     Деньги на карту
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-building"></i>
+                     Мои контакты
+                 </a>
+             </div>
+            
+             <!-- Бонусы и скидки -->
+             <div class="profile-nav-section">
+                 <div class="profile-nav-section-title">Бонусы и скидки</div>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-gift"></i>
+                     Кодовые слова и подарочные сертификаты
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-star"></i>
+                     Баллы и бонусы
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-credit-card"></i>
+                     Способы оплаты
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-crown"></i>
+                     ShopList Premium
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-coins"></i>
+                     Баланс средств
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-car"></i>
+                     Мой гараж
+                 </a>
+             </div>
+            
+             <!-- Заказы -->
+             <div class="profile-nav-section">
+                 <div class="profile-nav-section-title">Заказы</div>
+                 <a href="{% url 'profile:orders' %}" class="profile-nav-item {% if request.resolver_match.url_name == 'orders' %}active{% endif %}">
+                     <i class="fas fa-box"></i>
+                     Мои заказы
+                 </a>
+                 <a href="{% url 'cart' %}" class="profile-nav-item">
+                     <i class="fas fa-shopping-cart"></i>
+                     Моя корзина
+                 </a>
+                 <a href="{% url 'profile:favorites' %}" class="profile-nav-item {% if request.resolver_match.url_name == 'favorites' %}active{% endif %}">
+                     <i class="fas fa-heart"></i>
+                     Мои вишлисты
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-undo"></i>
+                     Мои возвраты
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-shopping-bag"></i>
+                     Купленные товары
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-plane"></i>
+                     ShopList Travel
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-moon"></i>
+                     Дни и ночи
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-balance-scale"></i>
+                     Сравнение товаров
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-envelope"></i>
+                     Сообщения
+                     <span class="profile-nav-badge">23</span>
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-receipt"></i>
+                     Электронные чеки
+                 </a>
+             </div>
+            
+            
+             <!-- Отзывы и вопросы -->
+             <div class="profile-nav-section">
+                 <div class="profile-nav-section-title">Отзывы и вопросы о товарах</div>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-star"></i>
+                     Мои отзывы
+                     <span class="profile-nav-badge">3</span>
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-gift"></i>
+                     Акция «Оценка за отзыв»
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-question-circle"></i>
+                     Мои вопросы и ответы
+                 </a>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-clock"></i>
+                     Вопросы, ожидающие ответа
+                 </a>
+             </div>
+            
+             <!-- Подписки -->
+             <div class="profile-nav-section">
+                 <div class="profile-nav-section-title">Подписки</div>
+             </div>
+             
+             <!-- Уведомления -->
+             <div class="profile-nav-section">
+                 <div class="profile-nav-section-title">Уведомления</div>
+                 <a href="#" class="profile-nav-item">
+                     <i class="fas fa-bell"></i>
+                     Настройки уведомлений
+                 </a>
+                 <a href="{% url 'profile:settings' %}" class="profile-nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                     <i class="fas fa-user"></i>
+                     Моя учетная запись
+                 </a>
+             </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="profile-main">
+        {% block profile_content %}
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}

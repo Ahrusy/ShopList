@@ -40,8 +40,9 @@ env = environ.Env(
     DEFAULT_FROM_EMAIL=(str, 'webmaster@localhost'),
 )
 
-# Take environment variables from .env file in docker directory
+# Take environment variables from .env files
 environ.Env.read_env(os.path.join(BASE_DIR, 'docker', '.env'))
+environ.Env.read_env(os.path.join(BASE_DIR, 'email_config.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -366,3 +367,19 @@ REST_FRAMEWORK = {
 # Настройки для Unsplash API
 UNSPLASH_ACCESS_KEY = os.getenv('UNSPLASH_ACCESS_KEY', '')
 UNSPLASH_SECRET_KEY = os.getenv('UNSPLASH_SECRET_KEY', '')
+
+# Email настройки
+# Для разработки используйте консольный вывод:
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Для продакшена используйте SMTP (раскомментируйте после настройки email_config.env):
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Настройки SMTP из переменных окружения (по умолчанию Mail.ru)
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.mail.ru')
+EMAIL_PORT = env('EMAIL_PORT', default=587)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
+EMAIL_USE_SSL = env('EMAIL_USE_SSL', default=False)
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='webmaster@mail.ru')

@@ -41,6 +41,10 @@ class AuthMixin:
         """Генерация SMS кода"""
         return str(random.randint(100000, 999999))
     
+    def generate_email_code(self):
+        """Генерация кода подтверждения для email"""
+        return str(random.randint(100000, 999999))
+    
     def send_sms_code(self, phone, code):
         """Отправка SMS кода (заглушка)"""
         # В реальном проекте здесь будет интеграция с SMS-сервисом
@@ -50,27 +54,99 @@ class AuthMixin:
     def send_email_verification(self, email, code):
         """Отправка кода подтверждения на email"""
         subject = 'Подтверждение регистрации - ShopList'
+        
+        # HTML версия письма
+        html_message = f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: #007bff; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
+                .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 5px 5px; }}
+                .code {{ background: #007bff; color: white; font-size: 24px; font-weight: bold; padding: 15px; text-align: center; border-radius: 5px; margin: 20px 0; letter-spacing: 3px; }}
+                .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>ShopList</h1>
+                    <p>Подтверждение регистрации</p>
+                </div>
+                <div class="content">
+                    <h2>Добро пожаловать в ShopList!</h2>
+                    <p>Для завершения регистрации введите следующий код подтверждения:</p>
+                    <div class="code">{code}</div>
+                    <p><strong>Важно:</strong></p>
+                    <ul>
+                        <li>Код действителен в течение 10 минут</li>
+                        <li>Не передавайте этот код третьим лицам</li>
+                        <li>Если вы не регистрировались на нашем сайте, проигнорируйте это письмо</li>
+                    </ul>
+                    <p>С уважением,<br>Команда ShopList</p>
+                </div>
+                <div class="footer">
+                    <p>Это автоматическое сообщение, не отвечайте на него</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        # Текстовая версия письма
         message = f'''
         Добро пожаловать в ShopList!
         
         Ваш код подтверждения: {code}
         
         Введите этот код для завершения регистрации.
+        Код действителен в течение 10 минут.
         
         Если вы не регистрировались на нашем сайте, проигнорируйте это письмо.
+        
+        С уважением,
+        Команда ShopList
         '''
         
         try:
-            send_mail(
+            from django.core.mail import EmailMultiAlternatives
+            
+            msg = EmailMultiAlternatives(
                 subject,
                 message,
                 settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
+                [email]
             )
+            msg.attach_alternative(html_message, "text/html")
+            msg.send()
+            
             return True
         except Exception as e:
             logger.error(f'Ошибка отправки email: {e}')
+            return False
+    
+    def send_system_email(self, email, subject, message, html_message=None):
+        """Отправка системного письма"""
+        try:
+            from django.core.mail import EmailMultiAlternatives
+            
+            msg = EmailMultiAlternatives(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email]
+            )
+            
+            if html_message:
+                msg.attach_alternative(html_message, "text/html")
+            
+            msg.send()
+            return True
+        except Exception as e:
+            logger.error(f'Ошибка отправки системного email: {e}')
             return False
 
 
@@ -85,6 +161,7 @@ def register_view(request):
     return render(request, 'auth/register.html', {'form': None})
 
 
+@csrf_exempt
 def handle_registration(request):
     """Обработка регистрации"""
     mixin = AuthMixin()
@@ -156,37 +233,49 @@ def register_by_phone(request, data, mixin):
 
 
 def register_by_email(request, data, mixin):
-    """Регистрация по email"""
+    """Регистрация по email с подтверждением кода"""
     email = data.get('email')
-    password = data.get('password')
-    password_confirm = data.get('password_confirm')
-    first_name = data.get('first_name_email')
-    last_name = data.get('last_name_email')
+    email_code = data.get('email_code')
     
-    if not all([email, password, password_confirm, first_name, last_name]):
-        return JsonResponse({'success': False, 'message': 'Заполните все поля'}, status=400)
-    
-    if password != password_confirm:
-        return JsonResponse({'success': False, 'message': 'Пароли не совпадают'}, status=400)
-    
-    if len(password) < 8:
-        return JsonResponse({'success': False, 'message': 'Пароль должен содержать минимум 8 символов'}, status=400)
+    if not all([email, email_code]):
+        return JsonResponse({'success': False, 'message': 'Введите email и код подтверждения'}, status=400)
     
     try:
-        # Проверяем, не зарегистрирован ли уже пользователь
+        # Получаем данные регистрации из кэша
+        registration_data = cache.get(f'email_registration_{email}')
+        if not registration_data:
+            return JsonResponse({'success': False, 'message': 'Время действия кода истекло. Запросите новый код'}, status=400)
+        
+        # Проверяем код подтверждения
+        if registration_data['code'] != email_code:
+            return JsonResponse({'success': False, 'message': 'Неверный код подтверждения'}, status=400)
+        
+        # Проверяем, не зарегистрирован ли уже пользователь (дополнительная проверка)
         if User.objects.filter(email=email).exists():
-            return JsonResponse({'success': False, 'message': 'Пользователь с таким email уже зарегистрирован'}, status=400)
+            return JsonResponse({'success': False, 'message': 'Пользователь с данным email уже существует'}, status=400)
+        
+        if User.objects.filter(phone=registration_data['phone']).exists():
+            return JsonResponse({'success': False, 'message': 'Пользователь с данным номером телефона уже существует'}, status=400)
         
         # Создаем пользователя
         username = f'user_{get_random_string(8)}'
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=password,
-            first_name=first_name,
-            last_name=last_name,
+            password=registration_data['password'],
+            first_name=registration_data['first_name'],
+            last_name=registration_data['last_name'],
+            phone=registration_data['phone'],
             is_active=True
         )
+        
+        # Добавляем отчество, если указано
+        if registration_data.get('middle_name'):
+            user.middle_name = registration_data['middle_name']
+            user.save()
+        
+        # Удаляем данные регистрации из кэша
+        cache.delete(f'email_registration_{email}')
         
         # Авторизуем пользователя
         login(request, user)
@@ -332,6 +421,74 @@ def send_sms_code(request):
         return JsonResponse({'success': False, 'message': 'Неверный формат данных'}, status=400)
     except Exception as e:
         logger.error(f'Ошибка отправки SMS: {e}')
+        return JsonResponse({'success': False, 'message': 'Ошибка сервера'}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def send_email_code(request):
+    """Отправка кода подтверждения на email"""
+    mixin = AuthMixin()
+    
+    try:
+        data = json.loads(request.body)
+        email = data.get('email')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        middle_name = data.get('middle_name', '')
+        phone = data.get('phone')
+        password = data.get('password')
+        password_confirm = data.get('password_confirm')
+        
+        if not all([email, first_name, last_name, phone, password, password_confirm]):
+            return JsonResponse({'success': False, 'message': 'Заполните все обязательные поля'}, status=400)
+        
+        if password != password_confirm:
+            return JsonResponse({'success': False, 'message': 'Пароли не совпадают'}, status=400)
+        
+        if len(password) < 8:
+            return JsonResponse({'success': False, 'message': 'Пароль должен содержать минимум 8 символов'}, status=400)
+        
+        # Проверяем, не зарегистрирован ли уже пользователь
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({'success': False, 'message': 'Пользователь с данным email уже существует'}, status=400)
+        
+        # Валидируем телефон
+        try:
+            formatted_phone = mixin.validate_phone(phone)
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+        
+        # Проверяем, не зарегистрирован ли уже пользователь с таким телефоном
+        if User.objects.filter(phone=formatted_phone).exists():
+            return JsonResponse({'success': False, 'message': 'Пользователь с данным номером телефона уже существует'}, status=400)
+        
+        # Генерируем код
+        code = mixin.generate_email_code()
+        
+        # Сохраняем данные регистрации в кэше на 10 минут
+        registration_data = {
+            'email': email,
+            'first_name': first_name,
+            'last_name': last_name,
+            'middle_name': middle_name,
+            'phone': formatted_phone,
+            'password': password,
+            'code': code
+        }
+        cache.set(f'email_registration_{email}', registration_data, 600)
+        
+        # Отправляем код на email
+        from .email_utils import EmailService
+        if EmailService.send_verification_code(email, code, first_name):
+            return JsonResponse({'success': True, 'message': 'Код подтверждения отправлен на email'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Ошибка отправки email'}, status=500)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Неверный формат данных'}, status=400)
+    except Exception as e:
+        logger.error(f'Ошибка отправки email кода: {e}')
         return JsonResponse({'success': False, 'message': 'Ошибка сервера'}, status=500)
 
 

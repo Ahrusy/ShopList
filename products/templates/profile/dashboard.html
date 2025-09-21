@@ -1,0 +1,198 @@
+{% extends 'profile/base.html' %}
+{% load static %}
+
+{% block profile_content %}
+<div>
+    <!-- Header -->
+    <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 8px;">Заказы · Товары</h1>
+        <p style="color: #666; font-size: 14px;">72</p>
+    </div>
+    
+    <!-- Tabs -->
+    <div style="border-bottom: 1px solid #e0e0e0; margin-bottom: 24px;">
+        <div style="display: flex; gap: 24px;">
+            <a href="#" style="padding: 12px 0; color: #0066cc; font-weight: 500; border-bottom: 2px solid #0066cc; text-decoration: none;">Актуальные</a>
+            <a href="#" style="padding: 12px 0; color: #666; text-decoration: none;">Завершённые</a>
+        </div>
+    </div>
+    
+    <!-- Order Status Sections -->
+    {% if user_orders %}
+        <!-- Передаём в доставку -->
+        <div style="margin-bottom: 24px;">
+            <h2 style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px;">Передаём в доставку</h2>
+            {% for order in user_orders %}
+                {% if order.status == 'shipped' or order.status == 'processing' %}
+                <div class="order-card">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+                                <div>
+                                    <p style="font-weight: 500; color: #333; margin-bottom: 4px;">Доставка в пункт выдачи</p>
+                                    <p style="font-size: 12px; color: #666;">Ожидаем {{ order.created_at|date:"d.m.Y" }}, {{ order.created_at|date:"l" }}</p>
+                                </div>
+                                <div style="width: 60px; height: 60px; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-box" style="font-size: 24px; color: #666;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 16px; font-weight: bold; color: #333;">{{ order.total_amount }} ₽</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+        <!-- Получен -->
+        <div style="margin-bottom: 24px;">
+            <h2 style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px;">Получен {{ user_orders.0.created_at|date:"d.m.Y" }}</h2>
+            {% for order in user_orders %}
+                {% if order.status == 'delivered' %}
+                <div class="order-card">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+                                <div>
+                                    <p style="font-weight: 500; color: #333; margin-bottom: 4px;">Доставка в пункт выдачи</p>
+                                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                        <button style="padding: 6px 12px; background: #0066cc; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Оценить товар</button>
+                                        <button style="padding: 6px 12px; background: #0066cc; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Оценить заказ</button>
+                                    </div>
+                                </div>
+                                <div style="width: 60px; height: 60px; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-check-circle" style="font-size: 24px; color: #28a745;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 16px; font-weight: bold; color: #333;">{{ order.total_amount }} ₽</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div style="text-align: center; padding: 48px 24px;">
+            <div style="width: 80px; height: 80px; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                <i class="fas fa-shopping-bag" style="font-size: 32px; color: #ccc;"></i>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;">У вас пока нет заказов</h3>
+            <p style="color: #666; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">Начните покупки, чтобы увидеть историю заказов здесь. Все ваши заказы будут отображаться на этой странице.</p>
+            <a href="{% url 'index' %}" style="display: inline-flex; align-items: center; padding: 12px 24px; background: #0066cc; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                <i class="fas fa-shopping-cart" style="margin-right: 8px;"></i>
+                Начать покупки
+            </a>
+        </div>
+    {% endif %}
+    
+    <!-- Recommendations Section -->
+    <div style="margin-top: 32px;">
+        <h2 style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px;">Рекомендации к вашим покупкам</h2>
+        <div class="product-grid">
+            <!-- Sample recommendation products -->
+            <div class="product-card">
+                <div style="width: 100%; height: 150px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-image" style="font-size: 32px; color: #ccc;"></i>
+                </div>
+                <div class="product-info">
+                    <div class="product-title">Elegant Braided Keychain</div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span class="product-price">286 ₽</span>
+                        <span class="product-old-price">498 ₽</span>
+                        <span class="product-discount">-42%</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                        <div style="display: flex; color: #ffc107;">
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                        </div>
+                        <span style="font-size: 11px; color: #666;">(32961)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div style="width: 100%; height: 150px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-image" style="font-size: 32px; color: #ccc;"></i>
+                </div>
+                <div class="product-info">
+                    <div class="product-title">Shower Head</div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span class="product-price">351 ₽</span>
+                        <span class="product-old-price">843 ₽</span>
+                        <span class="product-discount">-58%</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                        <div style="display: flex; color: #ffc107;">
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="far fa-star" style="font-size: 12px;"></i>
+                        </div>
+                        <span style="font-size: 11px; color: #666;">(13)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div style="width: 100%; height: 150px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-image" style="font-size: 32px; color: #ccc;"></i>
+                </div>
+                <div class="product-info">
+                    <div class="product-title">10A OTG Adapter</div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span class="product-price">130 ₽</span>
+                        <span class="product-old-price">261 ₽</span>
+                        <span class="product-discount">-48%</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                        <div style="display: flex; color: #ffc107;">
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                        </div>
+                        <span style="font-size: 11px; color: #666;">(46286)</span>
+                    </div>
+                    <div style="font-size: 11px; color: #666;">161 шт осталось</div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div style="width: 100%; height: 150px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-image" style="font-size: 32px; color: #ccc;"></i>
+                </div>
+                <div class="product-info">
+                    <div class="product-title">VIRA Bit Set</div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span class="product-price">166 ₽</span>
+                        <span class="product-old-price">529 ₽</span>
+                        <span class="product-discount">-68%</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                        <div style="display: flex; color: #ffc107;">
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                            <i class="fas fa-star" style="font-size: 12px;"></i>
+                        </div>
+                        <span style="font-size: 11px; color: #666;">(8199)</span>
+                    </div>
+                    <div style="font-size: 11px; color: #666;">2648 шт осталось</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

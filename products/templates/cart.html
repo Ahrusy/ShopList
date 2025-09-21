@@ -4,34 +4,33 @@
 
 {% block content %}
 <div class="bg-gray-50 min-h-screen">
-    <!-- Header Section -->
-    <div class="bg-white border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <h1 class="text-2xl font-bold text-gray-900">Корзина</h1>
-        </div>
-    </div>
-
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {% if cart_items %}
+        <!-- Header Section -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Корзина<sup class="text-lg text-gray-500">{{ cart_total_items|default:0 }}</sup></h1>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Main Cart Content -->
             <div class="lg:col-span-2">
                 <!-- Sale Banner -->
-                <div class="bg-red-600 text-white mb-3">
-                    <div class="p-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <span class="font-medium">Не упустите распродажу</span>
-                                <span class="text-sm">1 товар скоро подорожает</span>
+                <div class="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-heart text-pink-500"></i>
+                            <div>
+                                <span class="font-medium text-gray-900">Не упустите распродажу</span>
+                                <span class="text-gray-600 ml-2">{{ cart_total_items|default:0 }} товара скоро подорожают</span>
                             </div>
-                            <div class="text-sm">
-                                <span class="bg-white text-red-600 px-2 py-1 rounded font-medium">Осталось 14 дней</span>
-                            </div>
+                        </div>
+                        <div class="text-pink-600 font-medium">
+                            Осталось 14 дней
                         </div>
                     </div>
                 </div>
                 <!-- Cart Controls -->
-                <div class="bg-white border border-gray-200 p-3 mb-3">
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <label class="flex items-center space-x-2 cursor-pointer">
@@ -40,30 +39,35 @@
                             </label>
                         </div>
                         <div class="flex items-center space-x-4">
-                            <button class="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+                            <button class="text-sm text-gray-500 hover:text-gray-700 flex items-center space-x-1">
+                                <i class="fas fa-share-alt"></i>
                                 <span>Поделиться</span>
+                            </button>
+                            <button class="text-sm text-gray-500 hover:text-gray-700 flex items-center space-x-1">
+                                <i class="fas fa-trash"></i>
+                                <span>Удалить</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Available for Order Section -->
-                <div class="bg-white border border-gray-200 p-3 mb-3">
-                    <h3 class="text-sm font-medium text-gray-900">Доступны для заказа</h3>
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Доступны для заказа</h3>
                 </div>
 
                 <!-- Cart Items -->
-                <div class="space-y-3">
+                <div class="space-y-4">
                     {% for item in cart_items %}
-                    <div class="bg-white border border-gray-200 p-3 cart-item" data-product-id="{{ item.product.id }}">
-                        <div class="flex items-start space-x-3">
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 cart-item" data-product-id="{{ item.product.id }}">
+                        <div class="flex items-center space-x-4">
                             <!-- Checkbox -->
-                            <div class="flex-shrink-0 pt-1">
+                            <div class="flex-shrink-0">
                                 <input type="checkbox" class="item-checkbox w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" data-product-id="{{ item.product.id }}">
                             </div>
 
                             <!-- Product Image -->
-                            <div class="w-16 h-16 bg-gray-100 overflow-hidden flex-shrink-0">
+                            <div class="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                                 {% if item.product.images.first %}
                                     <img src="{{ item.product.images.first.image.url }}" 
                                          alt="{{ item.product.name }}" 
@@ -75,50 +79,66 @@
                                 {% endif %}
                             </div>
 
-                            <!-- Product Info -->
+                            <!-- Product Name -->
                             <div class="flex-1 min-w-0">
-                                <!-- Product Name -->
-                                <h3 class="text-sm font-medium text-gray-900 mb-2">
+                                <h3 class="text-sm font-medium text-gray-900 leading-tight">
                                     <a href="{% url 'product_detail' item.product.pk %}" class="hover:text-blue-600">
-                                        {{ item.product.name }}
+                                        {{ item.product.name|truncatechars:60 }}
                                     </a>
                                 </h3>
-                                
-                                <!-- Tags -->
-                                <div class="flex items-center space-x-2 mb-2">
-                                    {% if item.product.discount_price %}
-                                        <span class="text-xs text-red-600">Распродажа</span>
-                                    {% endif %}
-                                    <span class="text-xs text-blue-600">Постоплата</span>
-                                    <span class="text-xs text-gray-600">Купить</span>
+                                <!-- Tags and Actions -->
+                                <div class="flex items-center justify-between mt-1">
+                                    <div class="flex items-center space-x-2">
+                                        {% if item.product.discount_price %}
+                                            <span class="bg-pink-500 text-white px-2 py-1 rounded text-xs font-medium">Распродажа</span>
+                                        {% endif %}
+                                        <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">Постоплата</span>
+                                    </div>
+                                    <!-- Action Buttons -->
+                                    <div class="flex items-center space-x-2">
+                                        <button class="favorite-btn p-1 text-gray-400 hover:text-red-500 transition-colors" 
+                                                data-product-id="{{ item.product.id }}"
+                                                onclick="toggleFavorite({{ item.product.id }})"
+                                                title="Добавить в избранное">
+                                            <i class="fas fa-heart text-xs"></i>
+                                        </button>
+                                        <button class="remove-item p-1 text-gray-400 hover:text-red-500 transition-colors" 
+                                                data-product-id="{{ item.product.id }}"
+                                                title="Удалить из корзины">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                        <button class="buy-single p-1 text-gray-400 hover:text-blue-500 transition-colors" 
+                                                data-product-id="{{ item.product.id }}"
+                                                title="Купить сейчас">
+                                            <i class="fas fa-shopping-cart text-xs"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                
-                                <!-- Price -->
-                                <div class="mb-2">
-                                    {% if item.product.discount_price %}
-                                        <div class="text-base font-bold text-gray-900">{{ item.product.discount_price|floatformat:0 }} ₽</div>
-                                        <div class="text-sm text-gray-500 line-through">{{ item.product.price|floatformat:0 }} ₽</div>
-                                    {% else %}
-                                        <div class="text-base font-bold text-gray-900">{{ item.product.price|floatformat:0 }} ₽</div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Quantity Controls -->
-                                <div class="flex items-center space-x-1 mb-1">
-                                    <button class="quantity-btn w-6 h-6 border border-gray-300 flex items-center justify-center hover:bg-gray-50" data-action="decrease" data-product-id="{{ item.product.id }}">
-                                        <i class="fas fa-minus text-gray-600 text-xs"></i>
-                                    </button>
-                                    <span class="quantity-display w-6 text-center font-medium text-sm" data-product-id="{{ item.product.id }}">
-                                        {% if item.quantity %}{{ item.quantity }}{% else %}1{% endif %}
-                                    </span>
-                                    <button class="quantity-btn w-6 h-6 border border-gray-300 flex items-center justify-center hover:bg-gray-50" data-action="increase" data-product-id="{{ item.product.id }}">
-                                        <i class="fas fa-plus text-gray-600 text-xs"></i>
-                                    </button>
-                                </div>
-
-                                <!-- Stock Warning -->
-                                <div class="text-xs text-red-600">Количество ограничено</div>
                             </div>
+
+                            <!-- Quantity Controls -->
+                            <div class="flex items-center space-x-2">
+                                <button class="quantity-btn w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50" data-action="decrease" data-product-id="{{ item.product.id }}">
+                                    <i class="fas fa-minus text-gray-600 text-xs"></i>
+                                </button>
+                                <span class="quantity-display w-8 text-center font-medium text-sm" data-product-id="{{ item.product.id }}">
+                                    {% if item.quantity %}{{ item.quantity }}{% else %}1{% endif %}
+                                </span>
+                                <button class="quantity-btn w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50" data-action="increase" data-product-id="{{ item.product.id }}">
+                                    <i class="fas fa-plus text-gray-600 text-xs"></i>
+                                </button>
+                            </div>
+
+                            <!-- Price -->
+                            <div class="text-right">
+                                {% if item.product.discount_price %}
+                                    <div class="text-lg font-bold text-pink-600">{{ item.product.discount_price|floatformat:0 }} ₽</div>
+                                    <div class="text-sm text-gray-500 line-through">{{ item.product.price|floatformat:0 }} ₽</div>
+                                {% else %}
+                                    <div class="text-lg font-bold text-gray-900">{{ item.product.price|floatformat:0 }} ₽</div>
+                                {% endif %}
+                            </div>
+
                         </div>
                     </div>
                     {% endfor %}
@@ -127,42 +147,47 @@
 
             <!-- Order Summary Sidebar -->
             <div class="lg:col-span-1">
-                <div class="bg-white border border-gray-200 p-4 sticky top-6">
-                    <h3 class="text-base font-bold text-gray-900 mb-1">Ваша корзина</h3>
-                    <div class="text-sm text-gray-500 mb-4">{{ cart_total_items|default:0 }} товара · 513 гр</div>
-                    
-                    <div class="space-y-2">
-                        <div class="flex justify-between text-sm text-gray-700">
-                            <span>Товары ({{ cart_total_items|default:0 }})</span>
-                            <span class="text-base font-medium text-gray-900">{{ cart_total_price|default:0|floatformat:0 }} ₽</span>
-                        </div>
-                        <div class="flex justify-between text-sm text-gray-700">
-                            <span>Скидка</span>
-                            <span class="text-base font-medium text-red-600">-7 581 ₽</span>
-                        </div>
-                        <div class="text-sm text-blue-600 mb-3">Подробнее</div>
-                    </div>
-                    
-                    <div class="border-t border-gray-200 pt-3 mt-3">
-                        <div class="text-base font-bold text-gray-900 mb-2">С картой</div>
-                        <div class="text-xl font-bold text-gray-900 mb-1">894 ₽</div>
-                        <div class="text-sm text-gray-500 mb-1">Без карты</div>
-                        <div class="text-sm text-gray-500 line-through">1015 ₽</div>
-                    </div>
-                    
-                    <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 w-full text-center mt-4 rounded-md">
+                <div class="bg-white border border-gray-200 rounded-lg p-6 sticky top-6">
+                    <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-4 px-6 w-full text-center rounded-lg text-lg mb-4" onclick="window.location.href='/ru/checkout/'">
                         Перейти к оформлению
                     </button>
+                    <p class="text-sm text-gray-500 mb-6">Доступные способы и время доставки можно выбрать при оформлении заказа</p>
+                    
+                    <div class="border-b border-gray-200 pb-4 mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-lg font-bold text-gray-900">Ваша корзина</h3>
+                            <span class="text-sm text-gray-500">{{ cart_total_items|default:0 }} товара • 513 гр</span>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between text-sm text-gray-700">
+                                <span>Товары ({{ cart_total_items|default:0 }})</span>
+                                <span class="text-base font-medium text-gray-900">{{ cart_total_price|default:0|floatformat:0 }} ₽</span>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-700">
+                                <span>Скидка</span>
+                                <span class="text-base font-medium text-pink-600">-7 581 ₽</span>
+                            </div>
+                            <div class="text-sm text-blue-600">Подробнее</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="text-lg font-bold text-gray-900">С Ozon Картой</div>
+                        <div class="text-2xl font-bold text-green-600">894 ₽</div>
+                        <div class="text-sm text-gray-500">Без Ozon Карты</div>
+                        <div class="text-sm text-gray-500 line-through">1015 ₽</div>
+                    </div>
                 </div>
 
-                <!-- Recommended Products -->
+                <!-- Recently Viewed Products -->
                 {% if recommended_products %}
-                <div class="bg-white border border-gray-200 p-4 mt-4">
-                    <h3 class="text-base font-bold text-gray-900 mb-4">Вы смотрели</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3">
-                        {% for product in recommended_products|slice:":6" %}
-                        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                            <div class="w-full h-20 bg-gray-100 overflow-hidden">
+                <div class="bg-white border border-gray-200 rounded-lg p-6 mt-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Вы смотрели</h3>
+                    <div class="grid grid-cols-1 gap-4">
+                        {% for product in recommended_products|slice:":4" %}
+                        <div class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                            <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                                 {% if product.images.first %}
                                     <img src="{{ product.images.first.image.url }}" 
                                          alt="{{ product.name }}" 
@@ -173,14 +198,14 @@
                                     </div>
                                 {% endif %}
                             </div>
-                            <div class="p-2">
-                                <h4 class="text-sm font-normal text-gray-800 mb-0.5 truncate">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 mb-1 truncate">
                                     <a href="{% url 'product_detail' product.pk %}" class="hover:text-blue-600">
-                                        {{ product.name }}
+                                        {{ product.name|truncatechars:50 }}
                                     </a>
                                 </h4>
-                                <div class="flex items-center space-x-1">
-                                    <span class="text-base font-medium text-gray-900">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="text-sm font-bold text-green-600">
                                         {% if product.discount_price %}
                                             {{ product.discount_price|floatformat:0 }} ₽
                                         {% else %}
@@ -189,13 +214,22 @@
                                     </span>
                                     {% if product.discount_price %}
                                         <span class="text-xs text-gray-400 line-through">{{ product.price|floatformat:0 }} ₽</span>
+                                        <span class="text-xs text-red-600 font-medium">-{{ product.discount_percentage|floatformat:0 }}%</span>
                                     {% endif %}
                                 </div>
-                                <div class="flex items-center mt-1">
-                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                    <span class="text-xs text-gray-600 ml-1">4.9 (544 отзыва)</span>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-1">
+                                        <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        <span class="text-xs text-gray-600">4.9 (544 отзыва)</span>
+                                    </div>
+                                    <span class="text-xs text-gray-500">317 шт осталось</span>
                                 </div>
                             </div>
+                            <button class="favorite-btn p-2 text-gray-400 hover:text-red-500 transition-colors" 
+                                    data-product-id="{{ product.id }}"
+                                    onclick="toggleFavorite({{ product.id }})">
+                                <i class="fas fa-heart text-sm"></i>
+                            </button>
                         </div>
                         {% endfor %}
                     </div>
@@ -312,6 +346,24 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error removing item:', error);
             });
+        });
+    });
+    
+    // Buy single product functionality
+    document.querySelectorAll('.buy-single').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            
+            // Redirect to checkout page for single product
+            window.location.href = `/ru/checkout/?product_id=${productId}`;
+        });
+    });
+    
+    // Checkout all products functionality
+    document.querySelectorAll('button:contains("Перейти к оформлению")').forEach(button => {
+        button.addEventListener('click', function() {
+            // Redirect to checkout page for all products in cart
+            window.location.href = '/ru/checkout/';
         });
     });
 });

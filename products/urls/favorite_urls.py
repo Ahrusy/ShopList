@@ -87,6 +87,17 @@ def check_favorite_status(request, product_id):
     
     return JsonResponse({'is_favorite': is_favorite})
 
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def clear_all_favorites(request):
+    """Очистить все избранное"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Требуется авторизация'}, status=401)
+    
+    deleted_count = Favorite.objects.filter(user=request.user).delete()[0]
+    return JsonResponse({'success': True, 'message': f'Удалено {deleted_count} товаров из избранного'})
+
 app_name = 'favorites'
 
 urlpatterns = [
@@ -94,4 +105,5 @@ urlpatterns = [
     path('add/<int:product_id>/', add_to_favorites, name='add_to_favorites'),
     path('remove/<int:product_id>/', remove_from_favorites, name='remove_from_favorites'),
     path('check/<int:product_id>/', check_favorite_status, name='check_favorite_status'),
+    path('clear/', clear_all_favorites, name='clear_all_favorites'),
 ]

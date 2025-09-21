@@ -90,3 +90,5 @@ def update_banners_russian():
 if __name__ == '__main__':
     update_banners_russian()
 
+
+

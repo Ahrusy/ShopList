@@ -1,0 +1,125 @@
+{% extends 'profile/base.html' %}
+{% load static %}
+
+{% block profile_content %}
+{% csrf_token %}
+<div>
+    <!-- Page Header -->
+    <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 8px;">Мои вишлисты</h1>
+        <p style="color: #666; font-size: 14px;">Товары, которые вам понравились</p>
+    </div>
+    
+    <!-- Favorites Grid -->
+    {% if favorites %}
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" style="margin-bottom: 32px;">
+            {% for product in favorites %}
+                {% include 'components/product_card.html' %}
+            {% endfor %}
+        </div>
+        
+        <!-- Clear all button -->
+        <div style="text-align: center;">
+            <button onclick="clearAllFavorites()" style="background: #f5f5f5; color: #666; border: 1px solid #ddd; border-radius: 6px; padding: 12px 24px; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fas fa-trash"></i>
+                Очистить все вишлисты
+            </button>
+        </div>
+        
+    {% else %}
+        <!-- Empty State -->
+        <div style="text-align: center; padding: 48px 24px;">
+            <div style="width: 80px; height: 80px; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                <i class="fas fa-heart" style="font-size: 32px; color: #ccc;"></i>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;">Список избранного пуст</h3>
+            <p style="color: #666; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">Добавляйте товары в избранное, нажимая на иконку сердца. Они будут сохранены здесь для быстрого доступа.</p>
+            <a href="{% url 'index' %}" style="display: inline-flex; align-items: center; padding: 12px 24px; background: #0066cc; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                <i class="fas fa-shopping-cart" style="margin-right: 8px;"></i>
+                Начать покупки
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function removeFromFavorites(productId) {
+    fetch(`{% url 'favorites:remove_from_favorites' 0 %}`.replace('0', productId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при удалении из избранного');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при удалении из избранного');
+    });
+}
+
+function clearAllFavorites() {
+    if (confirm('Вы уверены, что хотите очистить весь список избранного?')) {
+        fetch('{% url "favorites:clear_all_favorites" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при очистке избранного');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ошибка при очистке избранного');
+        });
+    }
+}
+
+function addToCart(productId) {
+    fetch(`{% url 'add_to_cart' 0 %}`.replace('0', productId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const cartCounter = document.getElementById('cart-counter');
+            if (cartCounter) {
+                cartCounter.textContent = data.cart_count;
+            }
+            alert('Товар добавлен в корзину!');
+        } else {
+            alert('Ошибка при добавлении в корзину');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при добавлении в корзину');
+    });
+}
+
+function toggleFavorite(productId) {
+    // This function is defined in base_ozon.html
+    if (typeof window.toggleFavorite === 'function') {
+        window.toggleFavorite(productId);
+    }
+}
+</script>
+{% endblock %}

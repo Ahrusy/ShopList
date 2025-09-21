@@ -17,6 +17,8 @@
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
+    {% block extra_head %}{% endblock %}
+    
     <style>
         .max-w-8xl {
             max-width: 88rem; /* 1408px */
@@ -237,13 +239,16 @@
                                     <p class="text-sm font-medium text-gray-900">Личный кабинет</p>
                                     <p class="text-xs text-gray-500">{{ user.email }}</p>
                                 </div>
-                                <a href="{% url 'order_list' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                <a href="{% url 'profile:dashboard' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <i class="fas fa-user-circle mr-2"></i>Личный кабинет
+                                </a>
+                                <a href="{% url 'profile:orders' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
                                     <i class="fas fa-box mr-2"></i>Мои заказы
                                 </a>
-                                <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                <a href="{% url 'profile:favorites' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
                                     <i class="fas fa-heart mr-2"></i>Избранное
                                 </a>
-                                <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                <a href="{% url 'profile:settings' %}" class="block px-4 py-2 text-sm hover:bg-gray-100">
                                     <i class="fas fa-cog mr-2"></i>Настройки
                                 </a>
                                 <hr class="my-1">
