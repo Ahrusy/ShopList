@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{% csrf_token %}">
+    {% csrf_token %}
     <title>{% block title %}ShopList - Интернет-магазин{% endblock %}</title>
     
     <!-- Tailwind CSS -->
@@ -53,7 +54,7 @@
         .product-card {
             transition: all 0.3s ease;
             border: 1px solid #E5E7EB;
-            width: 220px;
+            width: 270px;
             min-height: 450px;
         }
         .product-card:hover {
@@ -64,7 +65,7 @@
         
         /* Product grid adjustments */
         #products-grid {
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)) !important;
             gap: 20px !important;
         }
         
@@ -577,7 +578,7 @@
 
         // Load cart count
         function loadCartCount() {
-            fetch('/cart/count/', {
+            fetch('{% url "cart_count" %}', {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
@@ -605,11 +606,12 @@
 
         // Add to cart
         function addToCart(productId, quantity = 1) {
-            fetch(`/cart/add/${productId}/`, {
+            fetch(`{% url 'add_to_cart' 0 %}`.replace('0', productId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken')
                 },
                 body: JSON.stringify({ quantity: quantity })
             })
@@ -651,7 +653,13 @@
             } text-white`;
             notification.textContent = message;
             
-            document.getElementById('notifications').appendChild(notification);
+            const notificationsContainer = document.getElementById('notifications');
+            if (notificationsContainer) {
+                notificationsContainer.appendChild(notification);
+            } else {
+                // Fallback: append to body
+                document.body.appendChild(notification);
+            }
             
             setTimeout(() => {
                 notification.remove();
@@ -661,10 +669,12 @@
         // Animate cart counter
         function animateCartCounter() {
             const counter = document.getElementById('cart-counter');
-            counter.style.transform = 'scale(1.2)';
-            setTimeout(() => {
-                counter.style.transform = 'scale(1)';
-            }, 200);
+            if (counter) {
+                counter.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    counter.style.transform = 'scale(1)';
+                }, 200);
+            }
         }
 
         // Get CSRF token
@@ -691,7 +701,9 @@
         // Location dropdown functions
         function toggleLocationDropdown() {
             const dropdown = document.getElementById('locationDropdown');
-            dropdown.classList.toggle('hidden');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+            }
         }
 
         // Close dropdown when clicking outside
@@ -699,7 +711,7 @@
             const dropdown = document.getElementById('locationDropdown');
             const locationTrigger = event.target.closest('.relative.group');
             
-            if (!locationTrigger && !dropdown.classList.contains('hidden')) {
+            if (dropdown && !locationTrigger && !dropdown.classList.contains('hidden')) {
                 dropdown.classList.add('hidden');
             }
         });
@@ -728,21 +740,6 @@
     
     <!-- Favorites JavaScript -->
     <script>
-    // Функция для получения CSRF токена
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
 
     // Функция для переключения избранного
     function toggleFavorite(productId) {
@@ -750,7 +747,7 @@
         const heartIcon = button.querySelector('i');
         
         // Проверяем текущий статус
-        fetch(`/ru/favorites/check/${productId}/`)
+        fetch(`{% url 'favorites:check_favorite_status' 0 %}`.replace('0', productId))
             .then(response => response.json())
             .then(data => {
                 if (data.is_favorite) {
@@ -768,11 +765,11 @@
 
     // Функция для добавления в избранное
     function addToFavorites(productId) {
-        fetch(`/ru/favorites/add/${productId}/`, {
+        fetch(`{% url 'favorites:add_to_favorites' 0 %}`.replace('0', productId), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken')
             }
         })
         .then(response => response.json())
@@ -792,11 +789,11 @@
 
     // Функция для удаления из избранного
     function removeFromFavorites(productId) {
-        fetch(`/ru/favorites/remove/${productId}/`, {
+        fetch(`{% url 'favorites:remove_from_favorites' 0 %}`.replace('0', productId), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken')
             }
         })
         .then(response => response.json())
@@ -817,7 +814,9 @@
     // Функция для обновления кнопки избранного
     function updateFavoriteButton(productId, isFavorite) {
         const button = document.querySelector(`[data-product-id="${productId}"]`);
+        if (!button) return;
         const heartIcon = button.querySelector('i');
+        if (!heartIcon) return;
         
         if (isFavorite) {
             heartIcon.classList.remove('text-gray-400');
