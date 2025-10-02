@@ -12,13 +12,13 @@ from django.utils import translation
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
-from django.db.models import F
+from django.db.models import F, Count
 from decimal import Decimal
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django_filters.views import FilterView
 from .filters import ProductFilter # Этот файл еще не создан, но будет создан позже
-from .forms import ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm, OrderForm, OrderItemForm
-from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page, Order, OrderItem, Cart, CartItem, Banner, ProductBanner
+from .forms import ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm, OrderForm, OrderItemForm, TaskForm, MoodTrackingForm
+from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page, Order, OrderItem, Cart, CartItem, Banner, ProductBanner, Task, MoodTracking
 from .services.product_service import ProductService # Импортируем сервис
 from django.forms import inlineformset_factory
 
@@ -454,6 +454,159 @@ class TagDeleteView(AdminRequiredMixin, SuccessMessageMixin, DeleteView):
     success_url = reverse_lazy('tag_list')
     success_message = _("Тег успешно удален!")
 
+
+class TaskListView(LoginRequiredMixin, ListView):
+    model = Task
+    template_name = 'tasks/task_list.html'
+    context_object_name = 'tasks'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        return Task.objects.filter(user=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['mood_trackings'] = MoodTracking.objects.filter(user=self.request.user)[:5]  # Last 5 mood trackings
+        return context
+
+
+class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    model = Task
+    form_class = TaskForm
+    template_name = 'tasks/task_form.html'
+    success_url = reverse_lazy('task_list')
+    success_message = _("Задача успешно создана!")
+    
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        response = super().form_valid(form)
+        
+        # Sync with Google Calendar if user has token
+        if self.request.user.google_calendar_token:
+            try:
+                calendar_service = GoogleCalendarService(self.request.user)
+                if calendar_service.is_available():
+                    event_id = calendar_service.create_event(self.object)
+                    if event_id:
+                        self.object.google_calendar_event_id = event_id
+                        self.object.save()
+                        messages.info(self.request, _("Задача синхронизирована с Google Calendar."))
+                    else:
+                        messages.warning(self.request, _("Не удалось синхронизировать задачу с Google Calendar."))
+            except Exception as e:
+                messages.warning(self.request, _("Ошибка синхронизации с Google Calendar: {}").format(str(e)))
+        
+        return response
+
+
+class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+    model = Task
+    form_class = TaskForm
+    template_name = 'tasks/task_form.html'
+    success_url = reverse_lazy('task_list')
+    success_message = _("Задача успешно обновлена!")
+    
+    def test_func(self):
+        task = self.get_object()
+        return task.user == self.request.user
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        
+        # Sync with Google Calendar if user has token
+        if self.request.user.google_calendar_token:
+            try:
+                calendar_service = GoogleCalendarService(self.request.user)
+                if calendar_service.is_available():
+                    success = calendar_service.update_event(self.object)
+                    if success:
+                        messages.info(self.request, _("Изменения синхронизированы с Google Calendar."))
+                    else:
+                        messages.warning(self.request, _("Не удалось синхронизировать изменения с Google Calendar."))
+            except Exception as e:
+                messages.warning(self.request, _("Ошибка синхронизации с Google Calendar: {}").format(str(e)))
+        
+        return response
+
+
+class TaskDeleteView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, DeleteView):
+    model = Task
+    template_name = 'tasks/task_confirm_delete.html'
+    success_url = reverse_lazy('task_list')
+    success_message = _("Задача успешно удалена!")
+    
+    def test_func(self):
+        task = self.get_object()
+        return task.user == self.request.user
+    
+    def delete(self, request, *args, **kwargs):
+        task = self.get_object()
+        
+        # Delete from Google Calendar if synced
+        if task.google_calendar_event_id and request.user.google_calendar_token:
+            try:
+                calendar_service = GoogleCalendarService(request.user)
+                if calendar_service.is_available():
+                    calendar_service.delete_event(task)
+            except Exception as e:
+                messages.warning(request, _("Ошибка удаления из Google Calendar: {}").format(str(e)))
+        
+        return super().delete(request, *args, **kwargs)
+
+
+class MoodTrackingCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    model = MoodTracking
+    form_class = MoodTrackingForm
+    template_name = 'mood/mood_form.html'
+    success_url = reverse_lazy('task_list')  # Redirect to task list after mood tracking
+    success_message = _("Настроение успешно записано!")
+    
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
+class MoodTrackingListView(LoginRequiredMixin, ListView):
+    model = MoodTracking
+    template_name = 'mood/mood_list.html'
+    context_object_name = 'mood_trackings'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        return MoodTracking.objects.filter(user=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Add mood statistics for chart
+        mood_data = MoodTracking.objects.filter(user=self.request.user).values('mood').annotate(count=Count('mood')).order_by('mood')
+        
+        # Prepare data for chart
+        mood_labels = []
+        mood_values = []
+        mood_colors = []
+        
+        mood_color_map = {
+            'very_happy': '#4ade80',  # green
+            'happy': '#a3e635',       # light green
+            'neutral': '#fde047',     # yellow
+            'sad': '#f97316',         # orange
+            'very_sad': '#ef4444',    # red
+        }
+        
+        for item in mood_data:
+            mood_labels.append(MoodTracking._meta.get_field('mood').choices_dict[item['mood']])
+            mood_values.append(item['count'])
+            mood_colors.append(mood_color_map.get(item['mood'], '#cccccc'))
+        
+        context['mood_chart_data'] = {
+            'labels': mood_labels,
+            'values': mood_values,
+            'colors': mood_colors,
+        }
+        
+        return context
+
 # AJAX для добавления/удаления из избранного
 @login_required
 def toggle_favorite(request, pk):
@@ -503,16 +656,18 @@ def product_detail(request, product_id):
     # Увеличиваем счетчик просмотров
     product.views_count = F('views_count') + 1
     product.save(update_fields=['views_count'])
+    product.refresh_from_db()  # Обновляем объект после сохранения
     
     # Получаем похожие товары из той же категории
     related_products = Product.objects.filter(
         category=product.category,
         is_active=True
-    ).exclude(id=product.id)[:4]
+    ).exclude(id=product.id)[:5]
     
     context = {
         'product': product,
         'related_products': related_products,
+        'images': product.images.all(),
     }
     
     return render(request, 'product_detail.html', context)
@@ -668,3 +823,8 @@ def product_banners_management(request):
         return redirect('login')
     
     return render(request, 'admin/product_banners_management.html')
+import requests
+from django.conf import settings
+from django.utils import timezone
+
+from .services.google_calendar_service import GoogleCalendarService

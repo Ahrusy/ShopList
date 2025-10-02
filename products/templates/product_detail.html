@@ -1,207 +1,466 @@
 {% extends 'base_ozon.html' %}
 {% load static %}
 
-{% block title %}{{ product.name }} - OZON{% endblock %}
+{% block title %}{{ product.name }} - ShopList{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Breadcrumb -->
-    <nav class="flex mb-6" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
-            <li class="inline-flex items-center">
-                <a href="{% url 'index' %}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-                    <i class="fas fa-home mr-2"></i>
-                    Главная
-                </a>
-            </li>
-            <li>
-                <div class="flex items-center">
-                    <i class="fas fa-chevron-right text-gray-400 mx-1"></i>
-                    {% if product.category.slug %}
-                    <a href="{% url 'category_view' product.category.slug %}" class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">
-                        {{ product.category.name }}
-                    </a>
-                    {% else %}
-                    <span class="ml-1 text-sm font-medium text-gray-700 md:ml-2">
-                        {{ product.category.name }}
-                    </span>
-                    {% endif %}
-                </div>
-            </li>
-            <li aria-current="page">
-                <div class="flex items-center">
-                    <i class="fas fa-chevron-right text-gray-400 mx-1"></i>
-                    <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ product.name|truncatechars:30 }}</span>
-                </div>
-            </li>
-        </ol>
+<div class="bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumbs -->
+    <nav class="flex mb-6 text-sm">
+        <a href="{% url 'index' %}" class="text-blue-600 hover:underline">Главная</a>
+        <span class="mx-2">/</span>
+        {% if product.category %}
+            <a href="{% url 'category_view' product.category.slug %}" class="text-blue-600 hover:underline">{{ product.category.name }}</a>
+            <span class="mx-2">/</span>
+        {% endif %}
+        <span class="text-gray-500">{{ product.name|truncatechars:50 }}</span>
     </nav>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Product Images -->
-        <div class="space-y-4">
-            <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+        <!-- Product Images Section -->
+        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <!-- Main Image -->
+            <div class="mb-4">
                 {% if product.images.first %}
-                    <img src="{{ product.images.first.image.url }}" 
+                    <img id="mainImage" src="{{ product.images.first.image.url }}" 
                          alt="{{ product.name }}" 
-                         class="w-full h-full object-cover">
+                         class="w-full h-96 object-contain rounded-lg border border-gray-200">
                 {% else %}
-                    <div class="w-full h-full flex items-center justify-center">
-                        <i class="fas fa-image text-gray-300 text-6xl"></i>
+                    <div class="w-full h-96 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200">
+                        <i class="fas fa-image text-gray-400 text-6xl"></i>
                     </div>
                 {% endif %}
             </div>
-            
-            <!-- Additional Images -->
+
+            <!-- Thumbnail Images -->
             {% if product.images.count > 1 %}
-                <div class="grid grid-cols-4 gap-2">
-                    {% for image in product.images.all|slice:":4" %}
-                        <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500">
-                            <img src="{{ image.image.url }}" 
-                                 alt="{{ product.name }}" 
-                                 class="w-full h-full object-cover">
-                        </div>
-                    {% endfor %}
+            <div class="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                {% for image in product.images.all %}
+                <div class="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-lg overflow-hidden bg-gray-50 ring-0 hover:ring-2 hover:ring-blue-500 transition-all {% if forloop.first %}border-blue-500{% endif %}"
+                     onclick="changeMainImage('{{ image.image.url }}', this)">
+                    <img src="{{ image.image.url }}" 
+                         alt="{{ product.name }}" 
+                         class="w-full h-20 object-cover">
                 </div>
+                {% endfor %}
+            </div>
             {% endif %}
         </div>
 
-        <!-- Product Info -->
-        <div class="space-y-6">
-            <!-- Product Name -->
-            <h1 class="text-3xl font-bold text-gray-900">{{ product.name }}</h1>
-            
+        <!-- Product Info Section -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <!-- Product Title -->
+            <h1 class="text-2xl font-bold text-gray-900 mb-3">{{ product.name }}</h1>
+
             <!-- Rating -->
-            <div class="flex items-center space-x-2">
-                <div class="flex rating-stars text-yellow-400">
+            <div class="flex items-center mb-4">
+                <div class="flex text-yellow-400">
                     {% for i in "12345" %}
-                        {% if forloop.counter <= product.rating %}
+                        {% if forloop.counter <= product.rating|floatformat:0 %}
                             <i class="fas fa-star"></i>
                         {% else %}
                             <i class="far fa-star"></i>
                         {% endif %}
                     {% endfor %}
                 </div>
-                <span class="text-sm text-gray-500">({{ product.reviews_count }} отзывов)</span>
+                <span class="ml-2 text-gray-600">{{ product.rating|floatformat:1 }}</span>
+                <span class="mx-2 text-gray-300">|</span>
+                <span class="text-blue-600 hover:underline cursor-pointer">{{ product.reviews_count }} отзывов</span>
             </div>
 
             <!-- Price -->
-            <div class="space-y-2">
+            <div class="mb-6">
                 {% if product.discount_price %}
-                    <div class="text-4xl font-bold text-gray-900">{{ product.discount_price|floatformat:0 }} ₽</div>
-                    <div class="text-xl text-gray-500 line-through">{{ product.price|floatformat:0 }} ₽</div>
-                    <div class="text-sm text-red-600 font-medium">
-                        Скидка действует!
+                    <div class="flex items-baseline flex-wrap gap-3">
+                        <span class="text-4xl font-extrabold text-green-600">{{ product.discount_price|floatformat:0 }} ₽</span>
+                        <span class="text-2xl text-gray-500 line-through">{{ product.price|floatformat:0 }} ₽</span>
+                        <span class="bg-red-100 text-red-800 text-sm font-semibold px-3 py-1 rounded-full">
+                            −{{ product.price|floatformat:0|add:"-"|add:product.discount_price|floatformat:0 }} ₽
+                        </span>
                     </div>
                 {% else %}
-                    <div class="text-4xl font-bold text-gray-900">{{ product.price|floatformat:0 }} ₽</div>
-                {% endif %}
-            </div>
-
-            <!-- Stock Status -->
-            <div class="flex items-center space-x-2">
-                {% if product.stock_quantity > 0 %}
-                    <i class="fas fa-check-circle text-green-500"></i>
-                    <span class="text-green-600 font-medium">В наличии</span>
-                    <span class="text-sm text-gray-500">({{ product.stock_quantity }} шт.)</span>
-                {% else %}
-                    <i class="fas fa-times-circle text-red-500"></i>
-                    <span class="text-red-600 font-medium">Нет в наличии</span>
+                    <span class="text-4xl font-extrabold text-green-600">{{ product.price|floatformat:0 }} ₽</span>
                 {% endif %}
             </div>
 
             <!-- Seller Info -->
-            {% if product.seller %}
-                <div class="border-t pt-4">
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Продавец</h3>
-                    <p class="text-gray-600">{{ product.seller.name }}</p>
-                </div>
-            {% endif %}
-
-            <!-- Add to Cart -->
-            <div class="space-y-4">
-                <button onclick="addToCart({{ product.id }})" 
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg text-lg font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                        {% if product.stock_quantity == 0 %}disabled{% endif %}>
-                    {% if product.stock_quantity > 0 %}
-                        <i class="fas fa-shopping-cart mr-2"></i>Добавить в корзину
-                    {% else %}
-                        Нет в наличии
+            <div class="mb-6 pb-4 border-b border-gray-200">
+                <div class="flex items-center">
+                    <span class="text-gray-600 mr-2">Продавец:</span>
+                    <span class="font-medium">{{ product.seller.company_name|default:"Продавец не указан" }}</span>
+                    {% if product.seller and product.seller.is_verified %}
+                        <span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Проверенный</span>
                     {% endif %}
-                </button>
-                
-                <button class="w-full border border-gray-300 hover:border-gray-400 text-gray-700 py-3 px-6 rounded-lg text-lg font-medium transition-colors">
-                    <i class="fas fa-heart mr-2"></i>В избранное
-                </button>
-            </div>
-
-            <!-- Product Details -->
-            <div class="border-t pt-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Описание</h3>
-                <div class="prose max-w-none text-gray-600">
-                    {{ product.description|linebreaks }}
                 </div>
             </div>
 
-            <!-- Characteristics -->
-            {% if product.characteristics.all %}
-                <div class="border-t pt-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Характеристики</h3>
-                    <dl class="grid grid-cols-1 gap-4">
-                        {% for char in product.characteristics.all %}
-                            <div class="flex justify-between py-2 border-b border-gray-100">
-                                <dt class="text-gray-600">{{ char.name }}</dt>
-                                <dd class="text-gray-900 font-medium">{{ char.value }}</dd>
-                            </div>
-                        {% endfor %}
-                    </dl>
-                </div>
+            <!-- Availability -->
+            <div class="mb-6">
+                {% if product.stock_quantity > 0 %}
+                    <div class="flex items-center text-green-600">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span>В наличии ({{ product.stock_quantity }} шт.)</span>
+                    </div>
+                {% else %}
+                    <div class="flex items-center text-red-600">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        <span>Нет в наличии</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Shop Addresses -->
+            {% if product.shops.all %}
+            <div class="mb-6">
+                <h3 class="font-semibold text-gray-900 mb-2">Доступно в магазинах:</h3>
+                <ul class="list-disc list-inside text-gray-700 space-y-1">
+                    {% for shop in product.shops.all %}
+                        <li>{{ shop.name }} - {{ shop.address }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
             {% endif %}
+
+            <!-- Quantity and Add to Cart -->
+            <div class="mb-6">
+                <div class="flex items-center mb-4">
+                    <span class="text-gray-700 font-medium mr-4">Количество:</span>
+                    <div class="flex items-center border border-gray-300 rounded">
+                        <button onclick="changeQuantity(-1)" class="px-3 py-2 hover:bg-gray-100">-</button>
+                        <input type="number" id="quantity" value="1" min="1" max="{{ product.stock_quantity }}" 
+                               class="w-16 text-center border-0 focus:outline-none">
+                        <button onclick="changeQuantity(1)" class="px-3 py-2 hover:bg-gray-100">+</button>
+                    </div>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button onclick="addToCart({{ product.id }}, parseInt(document.getElementById('quantity').value))" 
+                            class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold shadow-md transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            {% if product.stock_quantity == 0 %}disabled{% endif %}>
+                        {% if product.stock_quantity > 0 %}
+                            <i class="fas fa-shopping-cart mr-2"></i>Добавить в корзину
+                        {% else %}
+                            Нет в наличии
+                        {% endif %}
+                    </button>
+                    <button class="w-12 h-12 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50" onclick="toggleFavorite({{ product.id }})">
+                        <i class="fas fa-heart text-gray-400" id="favorite-icon-{{ product.id }}"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Delivery Info -->
+            <div class="bg-blue-50 rounded-lg p-4">
+                <div class="flex items-start">
+                    <i class="fas fa-truck text-blue-600 mt-1 mr-3"></i>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Доставка</h3>
+                        <p class="text-sm text-gray-600">Завтра, бесплатно при заказе от 1 000 ₽</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Related Products -->
-    {% if related_products %}
-        <div class="mt-16">
-            <h2 class="text-2xl font-bold text-gray-900 mb-8">Похожие товары</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {% for related_product in related_products %}
-                    {% include 'components/product_card.html' with product=related_product %}
+    <!-- Product Details Section -->
+    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Description -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Описание</h2>
+            <div class="text-gray-700">
+                {{ product.description|linebreaks }}
+            </div>
+        </div>
+
+        <!-- Characteristics -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Характеристики</h2>
+            <div class="space-y-3">
+                {% for char in product.characteristics.all %}
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600">{{ char.name }}</span>
+                    <span class="text-gray-900 font-medium">{{ char.value }}</span>
+                </div>
+                {% empty %}
+                <p class="text-gray-500">Характеристики не указаны</p>
                 {% endfor %}
             </div>
         </div>
+    </div>
+
+    <!-- Related Products Section -->
+    {% if related_products %}
+    <div class="mt-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Похожие товары</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {% for related_product in related_products %}
+            <div class="product-card border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow bg-white">
+                <div class="aspect-square bg-gray-100">
+                    {% if related_product.images.first %}
+                        <img src="{{ related_product.images.first.image.url }}" 
+                             alt="{{ related_product.name }}" 
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <i class="fas fa-image text-gray-400 text-2xl"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="p-3">
+                    <h3 class="text-sm font-medium text-gray-900 mb-1 truncate">{{ related_product.name }}</h3>
+                    <div class="flex items-center mb-2">
+                        <div class="flex text-yellow-400 text-xs">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= related_product.rating|floatformat:0 %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="text-xs text-gray-500 ml-1">{{ related_product.rating|floatformat:1 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        {% if related_product.discount_price %}
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-green-600">{{ related_product.discount_price|floatformat:0 }} ₽</span>
+                                <span class="text-xs text-gray-500 line-through">{{ related_product.price|floatformat:0 }} ₽</span>
+                            </div>
+                        {% else %}
+                            <span class="text-sm font-bold text-green-600">{{ related_product.price|floatformat:0 }} ₽</span>
+                        {% endif %}
+                        {% if related_product.stock_quantity > 0 %}
+                            <span class="text-xs text-green-600">В наличии</span>
+                        {% else %}
+                            <span class="text-xs text-red-600">Нет</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
     {% endif %}
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-function addToCart(productId) {
-    // Простая функция добавления в корзину
-    fetch(`/cart/add/${productId}/`, {
+function changeQuantity(delta) {
+    const input = document.getElementById('quantity');
+    const currentValue = parseInt(input.value);
+    const newValue = Math.max(1, Math.min({{ product.stock_quantity }}, currentValue + delta));
+    input.value = newValue;
+}
+
+function changeMainImage(imageUrl, thumbnail) {
+    // Remove border from all thumbnails
+    document.querySelectorAll('[onclick^="changeMainImage"]').forEach(el => {
+        el.classList.remove('border-blue-500');
+        el.classList.add('border-transparent');
+    });
+    
+    // Add border to clicked thumbnail
+    thumbnail.classList.remove('border-transparent');
+    thumbnail.classList.add('border-blue-500');
+    
+    // Change main image
+    document.getElementById('mainImage').src = imageUrl;
+}
+
+// Add to favorites function for product detail page
+function toggleFavorite(productId) {
+    const icon = document.getElementById(`favorite-icon-${productId}`);
+    
+    // Check current status
+    fetch(`/ru/favorites/check/${productId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_favorite) {
+                // Remove from favorites
+                removeFromFavorites(productId, icon);
+            } else {
+                // Add to favorites
+                addToFavorites(productId, icon);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking favorite status:', error);
+            showNotification('Ошибка проверки статуса избранного', 'error');
+        });
+}
+
+function addToFavorites(productId, icon) {
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? 
+        document.querySelector('[name=csrfmiddlewaretoken]').value : 
+        document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch(`/ru/favorites/add/${productId}/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => {
+        if (response.status === 401) {
+            // User not authenticated
+            showNotification('Для добавления в избранное необходимо войти в систему', 'error');
+            setTimeout(() => {
+                window.location.href = '/ru/auth/login/?next=' + encodeURIComponent(window.location.href);
+            }, 2000);
+            return null;
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data !== null) {
+            if (data && data.success) {
+                // Update icon
+                if (icon) {
+                    icon.classList.remove('text-gray-400');
+                    icon.classList.add('text-red-500');
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                }
+                showNotification(data.message, 'success');
+            } else if (data) {
+                showNotification(data.message || 'Ошибка при добавлении в избранное', 'info');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error adding to favorites:', error);
+        showNotification('Ошибка добавления в избранное', 'error');
+    });
+}
+
+function removeFromFavorites(productId, icon) {
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? 
+        document.querySelector('[name=csrfmiddlewaretoken]').value : 
+        document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch(`/ru/favorites/remove/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => {
+        if (response.status === 401) {
+            // User not authenticated
+            showNotification('Для удаления из избранного необходимо войти в систему', 'error');
+            setTimeout(() => {
+                window.location.href = '/ru/auth/login/?next=' + encodeURIComponent(window.location.href);
+            }, 2000);
+            return null;
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data !== null) {
+            if (data && data.success) {
+                // Update icon
+                if (icon) {
+                    icon.classList.remove('text-red-500');
+                    icon.classList.add('text-gray-400');
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                }
+                showNotification(data.message, 'success');
+            } else if (data) {
+                showNotification(data.message || 'Ошибка при удалении из избранного', 'info');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error removing from favorites:', error);
+        showNotification('Ошибка удаления из избранного', 'error');
+    });
+}
+
+function addToCart(productId, quantity) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('{% url "add_to_cart" product_id=0 %}'.replace('0', productId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
-            quantity: 1
+            product_id: productId,
+            quantity: quantity || 1
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Показать уведомление об успехе
-            alert('Товар добавлен в корзину!');
+            // Show success message
+            showNotification('Товар добавлен в корзину', 'success');
+            // Update cart count
+            loadCartCount();
         } else {
-            alert('Ошибка при добавлении товара в корзину');
+            showNotification('Ошибка при добавлении товара', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Ошибка при добавлении товара в корзину');
+        console.error('Error adding to cart:', error);
+        showNotification('Ошибка при добавлении товара', 'error');
     });
 }
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function loadCartCount() {
+    fetch('{% url "cart_count" %}')
+        .then(response => response.json())
+        .then(data => {
+            const counter = document.getElementById('cart-counter');
+            if (counter) {
+                counter.textContent = data.count;
+            }
+        })
+        .catch(error => console.error('Error loading cart count:', error));
+}
+
+// Initialize favorite status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const productId = {{ product.id }};
+    const icon = document.getElementById(`favorite-icon-${productId}`);
+    
+    if (icon) {
+        // Check favorite status
+        fetch(`/ru/favorites/check/${productId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_favorite) {
+                    icon.classList.remove('text-gray-400');
+                    icon.classList.add('text-red-500');
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking favorite status:', error);
+            });
+    }
+});
 </script>
 {% endblock %}

@@ -1,3 +1,8 @@
+from .client_auth import get_current_client
+
+def client(request):
+    return {'client': getattr(request, 'client', None) or get_current_client(request)}
+
 from .models import Category
 
 

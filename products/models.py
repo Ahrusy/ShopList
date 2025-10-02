@@ -12,6 +12,24 @@ import uuid
 # from parler.models import TranslatableModel, TranslatedFields # Закомментировано
 
 
+class ClientAccount(models.Model):
+    """Отдельная модель клиента (не связана с Django admin)."""
+    email = models.EmailField(unique=True, verbose_name=_("Email"))
+    phone = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name=_("Телефон"))
+    first_name = models.CharField(max_length=30, blank=True, verbose_name=_("Имя"))
+    last_name = models.CharField(max_length=30, blank=True, verbose_name=_("Фамилия"))
+    password = models.CharField(max_length=128, verbose_name=_("Пароль (хеш)"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Активен"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+
+    class Meta:
+        verbose_name = _("Клиент")
+        verbose_name_plural = _("Клиенты")
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.email
+
 class User(AbstractUser):
     """Кастомная модель пользователя"""
     ROLE_CHOICES = [
@@ -24,29 +42,68 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, blank=True, null=True, unique=True, verbose_name=_("Телефон"))
     middle_name = models.CharField(max_length=30, blank=True, null=True, verbose_name=_("Отчество"))
     favorites = models.ManyToManyField('Product', related_name='favorited_by', blank=True, verbose_name=_("Избранные товары"))
-    
-    groups = models.ManyToManyField(
-        'auth.Group',
-        verbose_name=_('groups'),
-        blank=True,
-        help_text=_(
-            'The groups this user belongs to. A user will get all permissions '
-            'granted to each of their groups.'
-        ),
-        related_name="products_user_set", # Уникальное related_name
-        related_query_name="user",
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        verbose_name=_('user permissions'),
-        blank=True,
-        help_text=_('Specific permissions for this user.'),
-        related_name="products_user_permissions_set", # Уникальное related_name
-        related_query_name="user",
-    )
+    google_calendar_token = models.TextField(blank=True, null=True, verbose_name=_("Токен Google Calendar"))
 
+
+class Task(models.Model):
+    """Модель задачи пользователя"""
+    PRIORITY_CHOICES = [
+        ('low', _('Низкий')),
+        ('medium', _('Средний')),
+        ('high', _('Высокий')),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', _('В ожидании')),
+        ('in_progress', _('В процессе')),
+        ('completed', _('Завершено')),
+        ('cancelled', _('Отменено')),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks', verbose_name=_("Пользователь"))
+    title = models.CharField(max_length=200, verbose_name=_("Название"))
+    description = models.TextField(blank=True, verbose_name=_("Описание"))
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium', verbose_name=_("Приоритет"))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name=_("Статус"))
+    due_date = models.DateTimeField(blank=True, null=True, verbose_name=_("Дата выполнения"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+    google_calendar_event_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID события в Google Calendar"))
+    
+    class Meta:
+        verbose_name = _("Задача")
+        verbose_name_plural = _("Задачи")
+        ordering = ['-created_at']
+    
     def __str__(self):
-        return self.username
+        return self.title
+
+
+class MoodTracking(models.Model):
+    """Модель отслеживания настроения пользователя"""
+    MOOD_CHOICES = [
+        ('very_happy', _('Очень радостное')),
+        ('happy', _('Радостное')),
+        ('neutral', _('Нейтральное')),
+        ('sad', _('Грустное')),
+        ('very_sad', _('Очень грустное')),
+    ]
+    
+    # Create a dictionary for easy access to choices
+    choices_dict = dict(MOOD_CHOICES)
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mood_trackings', verbose_name=_("Пользователь"))
+    mood = models.CharField(max_length=20, choices=MOOD_CHOICES, verbose_name=_("Настроение"))
+    note = models.TextField(blank=True, verbose_name=_("Заметка"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    
+    class Meta:
+        verbose_name = _("Отслеживание настроения")
+        verbose_name_plural = _("Отслеживания настроения")
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.get_mood_display()} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
 
 class Category(models.Model): # Изменено с TranslatableModel
@@ -178,7 +235,7 @@ class Product(models.Model): # Изменено с TranslatableModel
     currency = models.CharField(max_length=3, default='RUB', verbose_name=_("Валюта"))
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name=_("Категория"))
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='products', null=True, blank=True, verbose_name=_("Продавец"))
-    # shops = models.ManyToManyField(Shop, related_name='products', verbose_name=_("Магазины")) # Закомментировано
+    shops = models.ManyToManyField(Shop, related_name='products', verbose_name=_("Магазины"))
     tags = models.ManyToManyField(Tag, blank=True, related_name='products', verbose_name=_("Теги"))
     sku = models.CharField(max_length=100, unique=True, blank=True, verbose_name=_("Артикул"))
     stock_quantity = models.PositiveIntegerField(default=0, verbose_name=_("Количество на складе"))

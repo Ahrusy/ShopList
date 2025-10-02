@@ -22,7 +22,10 @@ from django.conf.urls.i18n import i18n_patterns # Для мультиязычн�
 from django.views.i18n import set_language # Для смены языка
 from django.shortcuts import redirect
 from products.views import index, category_view, checkout_view, order_detail_view, order_list_view, test_location_view, page_list_view, page_detail_view, product_detail, load_more_products
+from products import views as product_views
 from products import cart_views, api_views
+from products import review_views
+from products import notification_views
 from products.api import urls as products_api_urls
 from rest_framework import routers
 from products.api.views import ProductViewSet, CategoryViewSet, OrderViewSet, CartViewSet, UserViewSet, ShopViewSet, TagViewSet, LocationViewSet, UserLocationViewSet
@@ -54,6 +57,7 @@ urlpatterns = [
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    path('accounts/', include('allauth.urls')),  # Allauth URLs for social authentication
 ]
 
 urlpatterns += i18n_patterns(
@@ -71,6 +75,23 @@ urlpatterns += i18n_patterns(
     path('test_location/', test_location_view, name='test_location'),
     path('pages/', page_list_view, name='pages'),
     path('pages/<str:slug>/', page_detail_view, name='page_detail'),
+    # Отзывы
+    path('my-reviews/', review_views.my_reviews, name='my_reviews'),
+    # Уведомления
+    path('notifications/', notification_views.notification_list, name='notification_list'),
+    path('notification/<int:notification_id>/', notification_views.notification_detail, name='notification_detail'),
+    path('notification/<int:notification_id>/read/', notification_views.mark_as_read, name='mark_notification_read'),
+    path('notifications/mark-all-read/', notification_views.mark_all_as_read, name='mark_all_notifications_read'),
+    path('notification/<int:notification_id>/delete/', notification_views.delete_notification, name='delete_notification'),
+    path('notifications/unread-count/', notification_views.unread_count, name='unread_notifications_count'),
+    path('notifications/settings/', notification_views.notification_settings, name='notification_settings'),
+    # Tasks & Mood (ensure reverse names exist without importing nested urls)
+    path('tasks/', product_views.TaskListView.as_view(), name='task_list'),
+    path('tasks/create/', product_views.TaskCreateView.as_view(), name='task_create'),
+    path('tasks/<int:pk>/edit/', product_views.TaskUpdateView.as_view(), name='task_update'),
+    path('tasks/<int:pk>/delete/', product_views.TaskDeleteView.as_view(), name='task_delete'),
+    path('mood/history/', product_views.MoodTrackingListView.as_view(), name='mood_list'),
+    path('mood/create/', product_views.MoodTrackingCreateView.as_view(), name='mood_create'),
     # Аутентификация
     path('auth/', include('products.urls.auth_urls')),
     # Избранное

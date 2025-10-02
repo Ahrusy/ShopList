@@ -1,6 +1,7 @@
 from django.utils.deprecation import MiddlewareMixin
 from django.contrib.auth import get_user_model
 from .models import UserLocation, Location
+from .client_auth import get_current_client
 
 User = get_user_model()
 
@@ -66,6 +67,16 @@ class LocationMiddleware(MiddlewareMixin):
         else:
             # Для неаутентифицированных пользователей сохраняем в сессию
             request.session['user_location_id'] = location.id
+
+
+class ClientSessionMiddleware(MiddlewareMixin):
+    """Прикрепляет request.client из отдельной клиентской сессии."""
+    def process_request(self, request):
+        request.client = get_current_client(request)
+        return None
+
+
+
 
 
 

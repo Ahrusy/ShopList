@@ -571,9 +571,39 @@
     <script>
         // Get CSRF token from meta tag
         function getCSRFToken() {
-            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                   document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-                   getCookie('csrftoken');
+            // Try to get from meta tag first
+            const metaToken = document.querySelector('meta[name="csrf-token"]');
+            if (metaToken) {
+                const token = metaToken.getAttribute('content');
+                if (token) {
+                    return token;
+                }
+            }
+            
+            // Fallback to hidden input field
+            const inputToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (inputToken) {
+                return inputToken.value;
+            }
+            
+            // Final fallback to cookie
+            return getCookie('csrftoken');
+        }
+
+        // Get CSRF token from cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
         }
 
         // Load cart count
@@ -677,22 +707,6 @@
             }
         }
 
-        // Get CSRF token
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-
         // Load cart count on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadCartCount();
@@ -744,41 +758,62 @@
     // Функция для переключения избранного
     function toggleFavorite(productId) {
         const button = document.querySelector(`[data-product-id="${productId}"]`);
+        if (!button) return;
+        
         const heartIcon = button.querySelector('i');
         
         // Проверяем текущий статус
-        fetch(`{% url 'favorites:check_favorite_status' 0 %}`.replace('0', productId))
+        fetch(`/ru/favorites/check/${productId}/`)
             .then(response => response.json())
             .then(data => {
                 if (data.is_favorite) {
                     // Удаляем из избранного
-                    removeFromFavorites(productId);
+                    removeFromFavorites(productId, button, heartIcon);
                 } else {
                     // Добавляем в избранное
-                    addToFavorites(productId);
+                    addToFavorites(productId, button, heartIcon);
                 }
             })
             .catch(error => {
                 console.error('Ошибка проверки статуса избранного:', error);
+                showNotification('Ошибка проверки статуса избранного', 'error');
             });
     }
 
     // Функция для добавления в избранное
-    function addToFavorites(productId) {
-        fetch(`{% url 'favorites:add_to_favorites' 0 %}`.replace('0', productId), {
+    function addToFavorites(productId, button, heartIcon) {
+        fetch(`/ru/favorites/add/${productId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken')
+                'X-CSRFToken': getCSRFToken()
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 401) {
+                // User not authenticated, show message and redirect to login with a delay
+                showNotification('Для добавления в избранное необходимо войти в систему', 'error');
+                setTimeout(() => {
+                    window.location.href = '/ru/auth/login/?next=' + encodeURIComponent(window.location.href);
+                }, 2000);
+                return null;
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
-                updateFavoriteButton(productId, true);
-                showNotification(data.message, 'success');
-            } else {
-                showNotification(data.message, 'info');
+            if (data !== null) {
+                if (data && data.success) {
+                    // Обновляем кнопку
+                    if (heartIcon) {
+                        heartIcon.classList.remove('text-gray-400');
+                        heartIcon.classList.add('text-red-500');
+                        heartIcon.classList.remove('far');
+                        heartIcon.classList.add('fas');
+                    }
+                    showNotification(data.message, 'success');
+                } else if (data) {
+                    showNotification(data.message || 'Ошибка при добавлении в избранное', 'info');
+                }
             }
         })
         .catch(error => {
@@ -788,21 +823,39 @@
     }
 
     // Функция для удаления из избранного
-    function removeFromFavorites(productId) {
-        fetch(`{% url 'favorites:remove_from_favorites' 0 %}`.replace('0', productId), {
+    function removeFromFavorites(productId, button, heartIcon) {
+        fetch(`/ru/favorites/remove/${productId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken')
+                'X-CSRFToken': getCSRFToken()
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 401) {
+                // User not authenticated, show message and redirect to login with a delay
+                showNotification('Для удаления из избранного необходимо войти в систему', 'error');
+                setTimeout(() => {
+                    window.location.href = '/ru/auth/login/?next=' + encodeURIComponent(window.location.href);
+                }, 2000);
+                return null;
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
-                updateFavoriteButton(productId, false);
-                showNotification(data.message, 'success');
-            } else {
-                showNotification(data.message, 'info');
+            if (data !== null) {
+                if (data && data.success) {
+                    // Обновляем кнопку
+                    if (heartIcon) {
+                        heartIcon.classList.remove('text-red-500');
+                        heartIcon.classList.add('text-gray-400');
+                        heartIcon.classList.remove('fas');
+                        heartIcon.classList.add('far');
+                    }
+                    showNotification(data.message, 'success');
+                } else if (data) {
+                    showNotification(data.message || 'Ошибка при удалении из избранного', 'info');
+                }
             }
         })
         .catch(error => {
@@ -813,59 +866,23 @@
 
     // Функция для обновления кнопки избранного
     function updateFavoriteButton(productId, isFavorite) {
-        const button = document.querySelector(`[data-product-id="${productId}"]`);
-        if (!button) return;
-        const heartIcon = button.querySelector('i');
-        if (!heartIcon) return;
-        
-        if (isFavorite) {
-            heartIcon.classList.remove('text-gray-400');
-            heartIcon.classList.add('text-red-500');
-            heartIcon.classList.remove('far');
-            heartIcon.classList.add('fas');
-        } else {
-            heartIcon.classList.remove('text-red-500');
-            heartIcon.classList.add('text-gray-400');
-            heartIcon.classList.remove('fas');
-            heartIcon.classList.add('far');
-        }
-    }
-
-    // Функция для показа уведомлений
-    function showNotification(message, type = 'info') {
-        // Создаем элемент уведомления
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-md text-white text-sm font-medium transition-all duration-300 transform translate-x-full`;
-        
-        // Устанавливаем цвет в зависимости от типа
-        switch(type) {
-            case 'success':
-                notification.classList.add('bg-green-500');
-                break;
-            case 'error':
-                notification.classList.add('bg-red-500');
-                break;
-            case 'info':
-            default:
-                notification.classList.add('bg-blue-500');
-                break;
-        }
-        
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        
-        // Анимация появления
-        setTimeout(() => {
-            notification.classList.remove('translate-x-full');
-        }, 100);
-        
-        // Автоматическое скрытие через 3 секунды
-        setTimeout(() => {
-            notification.classList.add('translate-x-full');
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 3000);
+        const buttons = document.querySelectorAll(`[data-product-id="${productId}"]`);
+        buttons.forEach(button => {
+            const heartIcon = button.querySelector('i');
+            if (heartIcon) {
+                if (isFavorite) {
+                    heartIcon.classList.remove('text-gray-400');
+                    heartIcon.classList.add('text-red-500');
+                    heartIcon.classList.remove('far');
+                    heartIcon.classList.add('fas');
+                } else {
+                    heartIcon.classList.remove('text-red-500');
+                    heartIcon.classList.add('text-gray-400');
+                    heartIcon.classList.remove('fas');
+                    heartIcon.classList.add('far');
+                }
+            }
+        });
     }
 
     // Инициализация статуса избранного для всех товаров при загрузке страницы
@@ -891,3 +908,10 @@
     
 </body>
 </html>
+</body>
+</html>
+</html>
+
+
+
+

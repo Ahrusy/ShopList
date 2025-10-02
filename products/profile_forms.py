@@ -44,3 +44,9 @@ class ProfileUpdateForm(UserChangeForm):
         self.fields['middle_name'].label = 'Отчество'
         self.fields['email'].label = 'Email'
         self.fields['phone'].label = 'Телефон'
+
+
+
+
+
+

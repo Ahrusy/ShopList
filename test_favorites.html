@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Favorites</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Test Favorites Functionality</h1>
+        
+        <!-- Product Card for Testing -->
+        <div class="product-card bg-white rounded-lg border border-gray-200 p-4 max-w-sm">
+            <h2 class="text-xl font-semibold mb-2">Test Product</h2>
+            <p class="text-gray-600 mb-4">This is a test product for favorites functionality</p>
+            
+            <!-- Favorite Button -->
+            <button class="favorite-btn w-12 h-12 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50" 
+                    data-product-id="1"
+                    onclick="toggleFavorite(1)">
+                <i class="fas fa-heart text-gray-400"></i>
+            </button>
+            
+            <div class="mt-4">
+                <button onclick="testAddFavorite(1)" class="bg-blue-500 text-white px-4 py-2 rounded mr-2">Add to Favorites</button>
+                <button onclick="testRemoveFavorite(1)" class="bg-red-500 text-white px-4 py-2 rounded mr-2">Remove from Favorites</button>
+                <button onclick="testCheckFavorite(1)" class="bg-green-500 text-white px-4 py-2 rounded">Check Status</button>
+            </div>
+        </div>
+        
+        <div id="output" class="mt-4 p-4 bg-gray-100 rounded"></div>
+    </div>
+
+    <!-- CSRF Token -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="test-token">
+
+    <script>
+        // Simple notification function for testing
+        function showNotification(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `p-2 mb-2 rounded ${type === 'success' ? 'bg-green-200' : type === 'error' ? 'bg-red-200' : 'bg-blue-200'}`;
+            div.textContent = message;
+            output.appendChild(div);
+        }
+
+        // Get CSRF token function
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 'test-token';
+        }
+
+        // Test add to favorites
+        function testAddFavorite(productId) {
+            fetch(`/ru/favorites/add/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showNotification(`Add Favorite: ${data.message}`, data.success ? 'success' : 'info');
+                updateFavoriteButton(productId, !data.success); // If not successful, it's already in favorites
+            })
+            .catch(error => {
+                showNotification(`Add Favorite Error: ${error}`, 'error');
+            });
+        }
+
+        // Test remove from favorites
+        function testRemoveFavorite(productId) {
+            fetch(`/ru/favorites/remove/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showNotification(`Remove Favorite: ${data.message}`, data.success ? 'success' : 'info');
+                updateFavoriteButton(productId, data.success); // If successful, it's no longer in favorites
+            })
+            .catch(error => {
+                showNotification(`Remove Favorite Error: ${error}`, 'error');
+            });
+        }
+
+        // Test check favorite status
+        function testCheckFavorite(productId) {
+            fetch(`/ru/favorites/check/${productId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(`Check Favorite: ${data.is_favorite ? 'In favorites' : 'Not in favorites'}`, 'info');
+                    updateFavoriteButton(productId, data.is_favorite);
+                })
+                .catch(error => {
+                    showNotification(`Check Favorite Error: ${error}`, 'error');
+                });
+        }
+
+        // Update favorite button appearance
+        function updateFavoriteButton(productId, isFavorite) {
+            const button = document.querySelector(`[data-product-id="${productId}"]`);
+            if (button) {
+                const heartIcon = button.querySelector('i');
+                if (heartIcon) {
+                    if (isFavorite) {
+                        heartIcon.classList.remove('text-gray-400');
+                        heartIcon.classList.add('text-red-500');
+                        heartIcon.classList.remove('far');
+                        heartIcon.classList.add('fas');
+                    } else {
+                        heartIcon.classList.remove('text-red-500');
+                        heartIcon.classList.add('text-gray-400');
+                        heartIcon.classList.remove('fas');
+                        heartIcon.classList.add('far');
+                    }
+                }
+            }
+        }
+
+        // Toggle favorite function
+        function toggleFavorite(productId) {
+            // Check current status first
+            fetch(`/ru/favorites/check/${productId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_favorite) {
+                        // Remove from favorites
+                        testRemoveFavorite(productId);
+                    } else {
+                        // Add to favorites
+                        testAddFavorite(productId);
+                    }
+                })
+                .catch(error => {
+                    showNotification(`Toggle Error: ${error}`, 'error');
+                });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showNotification('Page loaded. Make sure you are logged in to test favorites functionality.', 'info');
+        });
+    </script>
+</body>
+</html>

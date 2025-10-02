@@ -1,0 +1,183 @@
+{% extends 'base_ozon.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "История настроения" %} - ShopList{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "История настроения" %}</h1>
+        <a href="{% url 'mood_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            {% trans "Добавить запись" %}
+        </a>
+    </div>
+
+    {% if mood_trackings %}
+        <!-- Mood Chart -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">{% trans "Статистика настроения" %}</h2>
+            <canvas id="moodChart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for mood in mood_trackings %}
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                {% if mood.mood == 'very_happy' %}
+                                    <div class="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center">
+                                        <span class="text-4xl">😄</span>
+                                    </div>
+                                {% elif mood.mood == 'happy' %}
+                                    <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                                        <span class="text-4xl">😊</span>
+                                    </div>
+                                {% elif mood.mood == 'neutral' %}
+                                    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <span class="text-4xl">😐</span>
+                                    </div>
+                                {% elif mood.mood == 'sad' %}
+                                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <span class="text-4xl">😔</span>
+                                    </div>
+                                {% elif mood.mood == 'very_sad' %}
+                                    <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                                        <span class="text-4xl">😢</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">{{ mood.get_mood_display }}</h3>
+                                <p class="text-sm text-gray-500">{{ mood.created_at|date:"d.m.Y H:i" }}</p>
+                            </div>
+                        </div>
+                        {% if mood.note %}
+                            <div class="mt-4">
+                                <p class="text-gray-600">{{ mood.note }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            {% trans "Предыдущая" %}
+                        </a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            {% trans "Следующая" %}
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            {% blocktrans with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}
+                                Показано <span class="font-medium">{{ start }}</span> до <span class="font-medium">{{ end }}</span> из <span class="font-medium">{{ total }}</span> результатов
+                            {% endblocktrans %}
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if page_obj.has_previous %}
+                                <a href="?page=1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">{% trans "Первая" %}</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                                    </svg>
+                                </a>
+                                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">{% trans "Предыдущая" %}</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                {% blocktrans with current=page_obj.number total=paginator.num_pages %}
+                                    Страница {{ current }} из {{ total }}
+                                {% endblocktrans %}
+                            </span>
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">{% trans "Следующая" %}</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                                <a href="?page={{ paginator.num_pages }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">{% trans "Последняя" %}</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">{% trans "Записи настроения не найдены" %}</h3>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Начните с создания первой записи настроения." %}</p>
+            <div class="mt-6">
+                <a href="{% url 'mood_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    {% trans "Добавить запись настроения" %}
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if mood_trackings %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('moodChart').getContext('2d');
+        var moodChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ mood_chart_data.labels|safe }},
+                datasets: [{
+                    label: '{% trans "Количество записей" %}',
+                    data: {{ mood_chart_data.values|safe }},
+                    backgroundColor: {{ mood_chart_data.colors|safe }},
+                    borderColor: {{ mood_chart_data.colors|safe }},
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

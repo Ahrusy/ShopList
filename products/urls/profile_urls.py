@@ -16,3 +16,9 @@ urlpatterns = [
     path('favorites/', profile_favorites, name='favorites'),
     path('settings/', profile_settings, name='settings'),
 ]
+
+
+
+
+
+

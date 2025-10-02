@@ -1,0 +1,27 @@
+{% extends 'base_ozon.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Вход" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-10">
+  <h1 class="text-2xl font-bold mb-6">{% trans "Вход в клиентский аккаунт" %}</h1>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div>
+      <label class="block text-sm mb-1">Email</label>
+      <input name="email" type="email" class="w-full border px-3 py-2 rounded" required>
+    </div>
+    <div>
+      <label class="block text-sm mb-1">{% trans "Пароль" %}</label>
+      <input name="password" type="password" class="w-full border px-3 py-2 rounded" required>
+    </div>
+    <button class="bg-blue-600 text-white px-4 py-2 rounded">{% trans "Войти" %}</button>
+  </form>
+</div>
+{% endblock %}
+
+
+
+
+

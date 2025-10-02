@@ -1,4 +1,4 @@
-{% extends 'auth_base.html' %}
+{% extends 'base_ozon.html' %}
 {% load static %}
 {% load i18n %}
 
@@ -93,11 +93,10 @@
                     <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         {% trans "Войти" %}
                     </button>
+                    <!-- Скрытые поля для определения метода входа -->
+                    <input type="hidden" id="login_method" name="login_method" value="phone">
                 </div>
             </form>
-
-            <!-- Скрытые поля для определения метода входа -->
-            <input type="hidden" id="login_method" name="login_method" value="phone">
 
             <!-- Социальные сети -->
             <div class="mt-6">
@@ -158,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginMethod = document.getElementById('login_method');
     const sendSmsBtn = document.getElementById('sendSmsBtn');
     const smsCodeField = document.getElementById('smsCodeField');
+    const form = document.querySelector('form');
 
     function switchTab(method) {
         if (method === 'phone') {
@@ -204,6 +204,31 @@ document.addEventListener('DOMContentLoaded', function() {
             sendSmsBtn.disabled = false;
             sendSmsBtn.textContent = '{% trans "Получить код по СМС" %}';
         }, 30000);
+    });
+    
+    // Form submission debugging
+    form.addEventListener('submit', function(e) {
+        console.log('Form submitted');
+        console.log('Login method:', loginMethod.value);
+        
+        // Log all form data
+        const formData = new FormData(form);
+        console.log('Form data:');
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+        
+        // Check if CSRF token is present
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfToken) {
+            console.log('CSRF Token:', csrfToken.value);
+        } else {
+            console.log('CSRF Token not found!');
+        }
+        
+        // Add a small delay to allow form submission
+        // You can uncomment the next line to prevent actual submission for debugging
+        // e.preventDefault();
     });
 });
 </script>

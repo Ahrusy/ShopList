@@ -5,6 +5,7 @@
 {% block title %}Избранное - ShopList{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Заголовок страницы в стиле Ozon -->
     <div class="mb-8">
@@ -39,97 +40,12 @@
         </div>
 
         <!-- Сетка товаров -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {% for product in favorites %}
-                <div class="product-card bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                    <!-- Product Image -->
-                    <div class="relative">
-                        <a href="{% url 'product_detail' product.pk %}">
-                            {% if product.images.first %}
-                                <img src="{{ product.images.first.image.url }}" 
-                                     alt="{{ product.name }}" 
-                                     class="w-full h-48 object-cover">
-                            {% else %}
-                                <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
-                                    <i class="fas fa-image text-gray-300 text-3xl"></i>
-                                </div>
-                            {% endif %}
-                        </a>
-                        
-                        <!-- Discount Badge -->
-                        {% if product.discount_price %}
-                            <div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                                -{{ product.discount_percentage|floatformat:0 }}%
-                            </div>
-                        {% endif %}
-                        
-                        <!-- Favorite Button -->
-                        <button class="favorite-btn absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors" 
-                                data-product-id="{{ product.id }}"
-                                onclick="toggleFavorite({{ product.id }})">
-                            <i class="fas fa-heart text-red-500 text-sm"></i>
-                        </button>
-                    </div>
-
-                    <!-- Product Info -->
-                    <div class="p-3">
-                        <!-- Rating -->
-                        <div class="flex items-center mb-2">
-                            <div class="flex rating-stars text-yellow-400">
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= product.rating %}
-                                        <i class="fas fa-star text-xs"></i>
-                                    {% else %}
-                                        <i class="far fa-star text-xs"></i>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                            <span class="text-xs text-gray-500 ml-1">({{ product.reviews_count }})</span>
-                        </div>
-
-                        <!-- Product Name -->
-                        <h3 class="font-medium text-gray-900 mb-2 text-sm leading-tight line-clamp-2">
-                            <a href="{% url 'product_detail' product.pk %}" class="hover:text-blue-600">
-                                {{ product.name|truncatechars:50 }}
-                            </a>
-                        </h3>
-
-                        <!-- Seller -->
-                        <p class="text-xs text-gray-500 mb-2 truncate">{{ product.seller.company_name|default:"OZON" }}</p>
-
-                        <!-- Price -->
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                {% if product.discount_price %}
-                                    <div class="text-lg font-bold text-gray-900">{{ product.discount_price|floatformat:0 }} ₽</div>
-                                    <div class="text-xs text-gray-500 line-through">{{ product.price|floatformat:0 }} ₽</div>
-                                {% else %}
-                                    <div class="text-lg font-bold text-gray-900">{{ product.price|floatformat:0 }} ₽</div>
-                                {% endif %}
-                            </div>
-                            <div class="text-xs text-gray-500">
-                                {% if product.stock_quantity > 0 %}
-                                    <span class="text-green-600 font-medium">В наличии</span>
-                                {% else %}
-                                    <span class="text-red-600">Нет в наличии</span>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Add to Cart Button -->
-                        <button onclick="addToCart({{ product.id }})" 
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                {% if product.stock_quantity == 0 %}disabled{% endif %}>
-                            {% if product.stock_quantity > 0 %}
-                                <i class="fas fa-shopping-cart mr-1"></i>В корзину
-                            {% else %}
-                                Нет в наличии
-                            {% endif %}
-                        </button>
-                    </div>
-                </div>
+                {% include 'components/product_card.html' %}
             {% endfor %}
         </div>
+
     {% else %}
         <!-- Пустое состояние в стиле Ozon -->
         <div class="text-center py-16">
@@ -161,54 +77,9 @@
         <!-- Рекомендуемые товары -->
         <div class="mt-16">
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Подобрано для вас</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% for product in recommended_products|slice:":4" %}
-                    <div class="product-card bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                        <!-- Product Image -->
-                        <div class="relative">
-                            <a href="{% url 'product_detail' product.pk %}">
-                                {% if product.images.first %}
-                                    <img src="{{ product.images.first.image.url }}" 
-                                         alt="{{ product.name }}" 
-                                         class="w-full h-48 object-cover">
-                                {% else %}
-                                    <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
-                                        <i class="fas fa-image text-gray-300 text-3xl"></i>
-                                    </div>
-                                {% endif %}
-                            </a>
-                            
-                            <!-- Sale Badge -->
-                            <div class="absolute bottom-2 left-2 bg-pink-500 text-white px-2 py-1 rounded text-xs font-bold">
-                                Распродажа
-                            </div>
-                            
-                            <!-- Favorite Button -->
-                            <button class="favorite-btn absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors" 
-                                    data-product-id="{{ product.id }}"
-                                    onclick="toggleFavorite({{ product.id }})">
-                                <i class="fas fa-heart text-gray-400 hover:text-red-500 text-sm"></i>
-                            </button>
-                        </div>
-
-                        <!-- Product Info -->
-                        <div class="p-3">
-                            <!-- Product Name -->
-                            <h3 class="font-medium text-gray-900 mb-2 text-sm leading-tight line-clamp-2">
-                                <a href="{% url 'product_detail' product.pk %}" class="hover:text-blue-600">
-                                    {{ product.name|truncatechars:50 }}
-                                </a>
-                            </h3>
-
-                            <!-- Price -->
-                            <div class="flex items-center justify-between">
-                                <div class="text-lg font-bold text-gray-900">{{ product.price|floatformat:0 }} ₽</div>
-                                <div class="text-xs text-gray-500">
-                                    <span class="text-green-600 font-medium">В наличии</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {% include 'components/product_card.html' %}
                 {% endfor %}
             </div>
         </div>
@@ -384,6 +255,68 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+// Функции для работы с избранным
+function removeFromFavorites(productId) {
+    fetch(`{% url 'favorites:remove_from_favorites' 0 %}`.replace('0', productId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при удалении из избранного');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при удалении из избранного');
+    });
+}
+
+function addToCart(productId) {
+    fetch(`{% url 'add_to_cart' 0 %}`.replace('0', productId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quantity: 1 })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const cartCounter = document.getElementById('cart-counter');
+            if (cartCounter) {
+                cartCounter.textContent = data.cart_count || 0;
+            }
+            alert('Товар добавлен в корзину!');
+        } else {
+            alert('Ошибка при добавлении в корзину');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при добавлении в корзину');
+    });
+}
+
+function toggleFavorite(productId) {
+    // This function is defined in base_ozon.html
+    if (typeof window.toggleFavorite === 'function') {
+        window.toggleFavorite(productId);
+    }
 }
 </script>
 {% endblock %}

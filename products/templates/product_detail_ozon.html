@@ -135,7 +135,10 @@
                                 Нет в наличии
                             {% endif %}
                         </button>
-                        <button class="w-12 h-12 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50">
+                        <!-- Favorite Button -->
+                        <button class="favorite-btn w-12 h-12 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50" 
+                                data-product-id="{{ product.id }}"
+                                onclick="toggleFavorite({{ product.id }})">
                             <i class="fas fa-heart text-gray-400"></i>
                         </button>
                     </div>
@@ -219,6 +222,9 @@ function changeQuantity(delta) {
     const newValue = Math.max(1, Math.min({{ product.stock_quantity }}, currentValue + delta));
     input.value = newValue;
 }
+
+// Use the toggleFavorite function from base template
+// The implementation is already provided in base_ozon.html
 </script>
 
 <!-- PhotoSwipe CSS -->
@@ -271,6 +277,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 firstGalleryLink.click();
             }
         });
+    }
+    
+    // Initialize favorite button status
+    const favoriteButton = document.querySelector('.favorite-btn');
+    if (favoriteButton) {
+        const productId = favoriteButton.getAttribute('data-product-id');
+        if (productId) {
+            fetch(`/ru/favorites/check/${productId}/`)
+                .then(response => {
+                    if (response.status === 401) {
+                        // User not authenticated, no need to show error
+                        return {is_favorite: false};
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const heartIcon = favoriteButton.querySelector('i');
+                    if (heartIcon && data.is_favorite) {
+                        heartIcon.classList.remove('text-gray-400');
+                        heartIcon.classList.add('text-red-500');
+                        heartIcon.classList.remove('far');
+                        heartIcon.classList.add('fas');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка проверки статуса избранного:', error);
+                });
+        }
     }
 });
 </script>

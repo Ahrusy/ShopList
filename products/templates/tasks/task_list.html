@@ -1,0 +1,206 @@
+{% extends 'base_ozon.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Мои задачи" %} - ShopList{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Мои задачи" %}</h1>
+        <a href="{% url 'task_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            {% trans "Добавить задачу" %}
+        </a>
+    </div>
+
+    {% if tasks %}
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul class="divide-y divide-gray-200">
+                {% for task in tasks %}
+                    <li>
+                        <div class="px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm font-medium text-blue-600 truncate">
+                                    {{ task.title }}
+                                </p>
+                                <div class="ml-2 flex-shrink-0 flex">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if task.status == 'completed' %}bg-green-100 text-green-800
+                                        {% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                        {% elif task.status == 'cancelled' %}bg-red-100 text-red-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ task.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="mt-2 sm:flex sm:justify-between">
+                                <div class="sm:flex">
+                                    <p class="flex items-center text-sm text-gray-500">
+                                        {{ task.description|truncatewords:15 }}
+                                    </p>
+                                </div>
+                                <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <p>
+                                        {% if task.due_date %}
+                                            {{ task.due_date|date:"d.m.Y H:i" }}
+                                        {% else %}
+                                            {% trans "Без срока" %}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex space-x-2">
+                                <a href="{% url 'task_update' task.pk %}" class="text-sm text-blue-600 hover:text-blue-900">
+                                    {% trans "Редактировать" %}
+                                </a>
+                                <a href="{% url 'task_delete' task.pk %}" class="text-sm text-red-600 hover:text-red-900">
+                                    {% trans "Удалить" %}
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            {% trans "Предыдущая" %}
+                        </a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            {% trans "Следующая" %}
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            {% blocktrans with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}
+                                Показано <span class="font-medium">{{ start }}</span> до <span class="font-medium">{{ end }}</span> из <span class="font-medium">{{ total }}</span> результатов
+                            {% endblocktrans %}
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if page_obj.has_previous %}
+                                <a href="?page=1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">{% trans "Первая" %}</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                                    </svg>
+                                </a>
+                                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">{% trans "Предыдущая" %}</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                {% blocktrans with current=page_obj.number total=paginator.num_pages %}
+                                    Страница {{ current }} из {{ total }}
+                                {% endblocktrans %}
+                            </span>
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">{% trans "Следующая" %}</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                                <a href="?page={{ paginator.num_pages }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">{% trans "Последняя" %}</span>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">{% trans "Задачи не найдены" %}</h3>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Начните с создания первой задачи." %}</p>
+            <div class="mt-6">
+                <a href="{% url 'task_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    {% trans "Создать задачу" %}
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Mood tracking section -->
+    <div class="mt-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-900">{% trans "Последние записи настроения" %}</h2>
+            <a href="{% url 'mood_create' %}" class="text-sm text-blue-600 hover:text-blue-900">
+                {% trans "Добавить запись" %}
+            </a>
+        </div>
+        
+        {% if mood_trackings %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for mood in mood_trackings %}
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                {% if mood.mood == 'very_happy' %}
+                                    <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                                        <span class="text-2xl">😄</span>
+                                    </div>
+                                {% elif mood.mood == 'happy' %}
+                                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                        <span class="text-2xl">😊</span>
+                                    </div>
+                                {% elif mood.mood == 'neutral' %}
+                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <span class="text-2xl">😐</span>
+                                    </div>
+                                {% elif mood.mood == 'sad' %}
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <span class="text-2xl">😔</span>
+                                    </div>
+                                {% elif mood.mood == 'very_sad' %}
+                                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                        <span class="text-2xl">😢</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-gray-900">{{ mood.get_mood_display }}</p>
+                                <p class="text-xs text-gray-500">{{ mood.created_at|date:"d.m.Y H:i" }}</p>
+                            </div>
+                        </div>
+                        {% if mood.note %}
+                            <p class="mt-2 text-sm text-gray-600">{{ mood.note|truncatewords:10 }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500 text-sm">{% trans "Записи настроения отсутствуют." %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column, Field
 from crispy_forms.bootstrap import FormActions
-from .models import Product, ProductImage, Category, Shop, Tag, Order, OrderItem, Review, PromoCode
+from .models import Product, ProductImage, Category, Shop, Tag, Order, OrderItem, Review, PromoCode, Task, MoodTracking
 
 User = get_user_model()
 
@@ -63,9 +63,10 @@ class ProductForm(forms.ModelForm):
     """Форма для товара"""
     class Meta:
         model = Product
-        fields = ['price', 'discount_price', 'currency', 'category', 'seller', 'tags', 'stock_quantity', 'is_active']
+        fields = ['price', 'discount_price', 'currency', 'category', 'seller', 'shops', 'tags', 'stock_quantity', 'is_active']
         widgets = {
             'tags': forms.CheckboxSelectMultiple(),
+            'shops': forms.CheckboxSelectMultiple(),
         }
     
     def __init__(self, *args, **kwargs):
@@ -84,6 +85,7 @@ class ProductForm(forms.ModelForm):
             ),
             'category',
             'seller',
+            'shops',
             'tags',
             'is_active',
             FormActions(
@@ -291,6 +293,51 @@ class PromoCodeForm(forms.ModelForm):
                 css_class='form-row'
             ),
             'is_active',
+            FormActions(
+                Submit('submit', _('Сохранить'), css_class='btn btn-primary')
+            )
+        )
+
+
+class TaskForm(forms.ModelForm):
+    """Форма для задачи"""
+    class Meta:
+        model = Task
+        fields = ['title', 'description', 'priority', 'status', 'due_date']
+        widgets = {
+            'due_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            'title',
+            'description',
+            Row(
+                Column('priority', css_class='form-group col-md-6 mb-0'),
+                Column('status', css_class='form-group col-md-6 mb-0'),
+                css_class='form-row'
+            ),
+            'due_date',
+            FormActions(
+                Submit('submit', _('Сохранить'), css_class='btn btn-primary')
+            )
+        )
+
+
+class MoodTrackingForm(forms.ModelForm):
+    """Форма для отслеживания настроения"""
+    class Meta:
+        model = MoodTracking
+        fields = ['mood', 'note']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            'mood',
+            'note',
             FormActions(
                 Submit('submit', _('Сохранить'), css_class='btn btn-primary')
             )

@@ -89,4 +89,14 @@ urlpatterns = [
     
     # API для каталога
     path('api/catalog/categories/<int:category_id>/subcategories/', api_views.category_subcategories, name='api_category_subcategories'),
+    
+    # Task management URLs
+    path('tasks/', views.TaskListView.as_view(), name='task_list'),
+    path('tasks/create/', views.TaskCreateView.as_view(), name='task_create'),
+    path('tasks/<int:pk>/edit/', views.TaskUpdateView.as_view(), name='task_update'),
+    path('tasks/<int:pk>/delete/', views.TaskDeleteView.as_view(), name='task_delete'),
+    
+    # Mood tracking URLs
+    path('mood/create/', views.MoodTrackingCreateView.as_view(), name='mood_create'),
+    path('mood/history/', views.MoodTrackingListView.as_view(), name='mood_list'),
 ]

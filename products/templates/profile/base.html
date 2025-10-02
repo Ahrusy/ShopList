@@ -412,7 +412,7 @@
                      <i class="fas fa-balance-scale"></i>
                      Сравнение товаров
                  </a>
-                 <a href="#" class="profile-nav-item">
+                <a href="{% url 'notification_list' %}" class="profile-nav-item {% if request.resolver_match.url_name == 'notification_list' %}active{% endif %}">
                      <i class="fas fa-envelope"></i>
                      Сообщения
                      <span class="profile-nav-badge">23</span>
@@ -427,7 +427,7 @@
              <!-- Отзывы и вопросы -->
              <div class="profile-nav-section">
                  <div class="profile-nav-section-title">Отзывы и вопросы о товарах</div>
-                 <a href="#" class="profile-nav-item">
+                <a href="{% url 'my_reviews' %}" class="profile-nav-item {% if request.resolver_match.url_name == 'my_reviews' %}active{% endif %}">
                      <i class="fas fa-star"></i>
                      Мои отзывы
                      <span class="profile-nav-badge">3</span>
@@ -454,7 +454,7 @@
              <!-- Уведомления -->
              <div class="profile-nav-section">
                  <div class="profile-nav-section-title">Уведомления</div>
-                 <a href="#" class="profile-nav-item">
+                <a href="{% url 'notification_settings' %}" class="profile-nav-item {% if request.resolver_match.url_name == 'notification_settings' %}active{% endif %}">
                      <i class="fas fa-bell"></i>
                      Настройки уведомлений
                  </a>

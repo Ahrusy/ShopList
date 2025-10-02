@@ -1,0 +1,38 @@
+{% extends 'base_ozon.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Регистрация" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-10">
+  <h1 class="text-2xl font-bold mb-6">{% trans "Регистрация клиентского аккаунта" %}</h1>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div>
+      <label class="block text-sm mb-1">Email</label>
+      <input name="email" type="email" class="w-full border px-3 py-2 rounded" required>
+    </div>
+    <div>
+      <label class="block text-sm mb-1">{% trans "Пароль" %}</label>
+      <input name="password" type="password" class="w-full border px-3 py-2 rounded" required>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm mb-1">{% trans "Имя" %}</label>
+        <input name="first_name" class="w-full border px-3 py-2 rounded">
+      </div>
+      <div>
+        <label class="block text-sm mb-1">{% trans "Фамилия" %}</label>
+        <input name="last_name" class="w-full border px-3 py-2 rounded">
+      </div>
+    </div>
+    <button class="bg-blue-600 text-white px-4 py-2 rounded">{% trans "Зарегистрироваться" %}</button>
+  </form>
+  <p class="text-sm text-gray-500 mt-4">{% trans "Админка Django использует другую учётную запись (staff/superuser)." %}</p>
+</div>
+{% endblock %}
+
+
+
+
+
