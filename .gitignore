@@ -138,6 +138,8 @@ static/
 .idea/
 *.swp
 *.swo
+/.cursor/
+*.code-workspace
 
 # OS
 .DS_Store
