@@ -1,5 +1,6 @@
 from django.db.models import F
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+# PostgreSQL search imports (conditionally imported where needed)
+# from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from ..models import Product, Category, Shop, Tag
 from ..repositories.product_repository import ProductRepository # Импортируем репозиторий
 from django.utils import translation
@@ -51,10 +52,24 @@ class ProductService:
 
         query = filters.get('q')
         if query:
-            search_query = SearchQuery(query)
-            queryset = queryset.annotate(
-                rank=SearchRank(F('search_vector'), search_query)
-            ).filter(search_vector=search_query).order_by('-rank')
+            # Проверяем, используем ли мы PostgreSQL (только PostgreSQL поддерживает SearchVector)
+            from django.conf import settings
+            db_engine = settings.DATABASES['default']['ENGINE']
+            
+            if 'postgresql' in db_engine:
+                # Используем полнотекстовый поиск PostgreSQL
+                from django.contrib.postgres.search import SearchQuery, SearchRank
+                from django.db.models import F
+                search_query = SearchQuery(query)
+                queryset = queryset.annotate(
+                    rank=SearchRank(F('search_vector'), search_query)
+                ).filter(search_vector=search_query).order_by('-rank')
+            else:
+                # Для других баз данных (например, SQLite) используем простой поиск по названию и описанию
+                from django.db import models
+                queryset = queryset.filter(
+                    models.Q(name__icontains=query) | models.Q(description__icontains=query)
+                )
 
         return queryset
 

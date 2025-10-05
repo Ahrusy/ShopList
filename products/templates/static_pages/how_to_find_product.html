@@ -1,0 +1,9 @@
+{% extends 'static_pages/base.html' %}
+
+{% block page_content %}
+    {% if page %}
+        {{ page.content|safe }}
+    {% else %}
+        {{ content|safe }}
+    {% endif %}
+{% endblock %}

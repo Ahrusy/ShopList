@@ -1,72 +1,37 @@
-# ShopList
+# ShopList E-commerce Project
 
-## Описание
-ShopList — масштабируемый e-commerce сайт с REST API, мультиязычностью, картами, уведомлениями и аналитикой. Поддерживает просмотр товаров, управление ассортиментом и интеграции.
+## Overview
+ShopList is a scalable e-commerce website with REST API, multilingual support, maps, notifications, and analytics. It supports product browsing, inventory management, and integrations.
 
-## Требования
+## Documentation
+All project documentation has been consolidated in the [documentation](documentation/) folder:
+- [Quick Start Guide (English)](documentation/QUICK_START.md)
+- [Quick Start Guide (Russian)](documentation/QUICK_START_RU.md)
+- [Technical Specification](documentation/technical_specification.md)
+- [README](documentation/README.md)
+
+## Quick Start
+For a quick setup and run of the project, please refer to the [Quick Start Guide (English)](documentation/QUICK_START.md) or [Quick Start Guide (Russian)](documentation/QUICK_START_RU.md).
+
+## Requirements
 - Python 3.10+
-- Django 4.x, Django REST Framework
-- PostgreSQL, Redis
-- Docker, Kubernetes
-- Tailwind CSS, Alpine.js, Chart.js, PhotoSwipe
+- Django 5.2.6
+- PostgreSQL (or SQLite for development)
+- Redis (optional, file-based cache used for development)
 
-## Установка
-1. Клонируйте репозиторий:
-   ```bash
-   git clone <repository_url>
-   cd shoplist
-   ```
+## Main Features
+- Product catalog with categories and search
+- User authentication and profiles
+- Shopping cart and order management
+- Multi-language support (Russian, English, Arabic)
+- REST API with Swagger documentation
+- Admin panel for product management
+- Favorites and reviews system
+- Notifications system
+- Analytics dashboard
 
-2. Настройте .env:
-   ```
-   DATABASE_URL=postgresql://user:pass@localhost/db
-   SECRET_KEY=your-secret-key
-   REDIS_URL=redis://localhost:6379/0
-   CLOUDINARY_URL=cloudinary://key:secret@cloud
-   UNSPLASH_ACCESS_KEY=your-unsplash-access-key
-   ```
+## Project Organization
+For information about recent project cleanup and organization, see [Project Cleanup Summary](documentation/PROJECT_CLEANUP_SUMMARY.md).
 
-3. Запустите Docker:
-   ```bash
-   docker-compose up --build
-   ```
-
-4. Выполните миграции:
-   ```bash
-   docker-compose exec web python manage.py makemigrations
-   docker-compose exec web python manage.py migrate
-   ```
-
-5. Загрузите данные:
-   ```bash
-   docker-compose exec web python manage.py generate_fixtures --categories 5 --shops 10 --tags 15 --products 50
-   ```
-
-6. Создайте суперпользователя:
-   ```bash
-   docker-compose exec web python manage.py createsuperuser
-   ```
-
-## Использование
-
-*   **Главная**: `/` — товары, поиск, фильтры, карта.
-*   **Товар**: `/products/<id>/` — детали.
-*   **API**: `/api/v1/` — Swagger.
-*   **Фронтенд-админка**: `/manager/` — управление.
-*   **Django admin**: `/admin/` — полный доступ.
-*   **Регистрация**: `/register/`, вход: `/login/`.
-
-## Деплой
-
-Zero-downtime: Kubernetes.
-CI/CD: GitHub Actions.
-Мониторинг: Sentry, Prometheus, Grafana.
-Логирование: ELK.
-CDN: Cloudinary.
-Резервное копирование: S3, pg_dump.
-
-## Дополнительные замечания
-- **SEO**: Мета-теги, sitemap.xml, robots.txt, canonical URLs.
-- **Мониторинг**: Метрики здоровья (uptime, latency) через Prometheus.
-- **Масштабируемость**: Celery для асинхронных задач (уведомления, аналитика).
-- **Документация**: Архитектурные диаграммы (C4 model) в `/docs/`.
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

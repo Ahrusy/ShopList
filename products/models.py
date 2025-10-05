@@ -558,12 +558,22 @@ def update_product_search_vector(sender, instance, **kwargs):
     """Обновляет вектор поиска для товара"""
     # Проверяем, что это не рекурсивный вызов
     if not kwargs.get('update_fields') or 'search_vector' not in kwargs.get('update_fields', []):
+        # Проверяем, используем ли мы PostgreSQL (только PostgreSQL поддерживает SearchVector)
+        from django.conf import settings
         from django.db import transaction
-        with transaction.atomic():
-            # Обновляем search_vector напрямую через QuerySet, чтобы избежать рекурсии
-            Product.objects.filter(pk=instance.pk).update(
-                search_vector=SearchVector('name', 'description')
-            )
+        
+        # Получаем тип базы данных
+        db_engine = settings.DATABASES['default']['ENGINE']
+        
+        # Используем SearchVector только если это PostgreSQL
+        if 'postgresql' in db_engine:
+            with transaction.atomic():
+                # Обновляем search_vector напрямую через QuerySet, чтобы избежать рекурсии
+                Product.objects.filter(pk=instance.pk).update(
+                    search_vector=SearchVector('name', 'description')
+                )
+        # Для других баз данных (например, SQLite) просто пропускаем обновление search_vector
+        # Это предотвращает ошибку с to_tsvector в SQLite
 
 
 @receiver(post_save, sender=Review)
@@ -756,3 +766,22 @@ def create_cart(sender, instance, created, **kwargs):
     """Создает корзину для нового пользователя"""
     if created:
         Cart.objects.create(user=instance)
+
+
+class StaticPage(models.Model):
+    """Модель для статических страниц сайта"""
+    title = models.CharField(max_length=200, verbose_name='Заголовок')
+    slug = models.SlugField(max_length=200, unique=True, verbose_name='URL-адрес')
+    content = models.TextField(verbose_name='Содержимое')
+    meta_description = models.CharField(max_length=160, blank=True, verbose_name='Мета-описание')
+    is_active = models.BooleanField(default=True, verbose_name='Активна')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
+    
+    class Meta:
+        verbose_name = 'Статическая страница'
+        verbose_name_plural = 'Статические страницы'
+        ordering = ['title']
+    
+    def __str__(self):
+        return self.title

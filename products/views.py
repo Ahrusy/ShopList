@@ -14,7 +14,8 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
 from django.db.models import F, Count
 from decimal import Decimal
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+# PostgreSQL search imports (conditionally imported where needed)
+# from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django_filters.views import FilterView
 from .filters import ProductFilter # Этот файл еще не создан, но будет создан позже
 from .forms import ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm, OrderForm, OrderItemForm, TaskForm, MoodTrackingForm
@@ -226,10 +227,23 @@ class ProductListView(FilterView):
         queryset = super().get_queryset().prefetch_related('images', 'category', 'seller', 'tags')
         query = self.request.GET.get('q')
         if query:
-            search_query = SearchQuery(query)
-            queryset = queryset.annotate(
-                rank=SearchRank(F('search_vector'), search_query)
-            ).filter(search_vector=search_query).order_by('-rank')
+            # Проверяем, используем ли мы PostgreSQL (только PostgreSQL поддерживает SearchVector)
+            from django.conf import settings
+            db_engine = settings.DATABASES['default']['ENGINE']
+            
+            if 'postgresql' in db_engine:
+                # Используем полнотекстовый поиск PostgreSQL
+                from django.contrib.postgres.search import SearchQuery, SearchRank
+                search_query = SearchQuery(query)
+                queryset = queryset.annotate(
+                    rank=SearchRank(F('search_vector'), search_query)
+                ).filter(search_vector=search_query).order_by('-rank')
+            else:
+                # Для других баз данных (например, SQLite) используем простой поиск по названию и описанию
+                from django.db import models
+                queryset = queryset.filter(
+                    models.Q(name__icontains=query) | models.Q(description__icontains=query)
+                )
         return queryset
 
     def get_context_data(self, **kwargs):

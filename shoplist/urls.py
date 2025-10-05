@@ -26,6 +26,7 @@ from products import views as product_views
 from products import cart_views, api_views
 from products import review_views
 from products import notification_views
+from products import static_views
 from products.api import urls as products_api_urls
 from rest_framework import routers
 from products.api.views import ProductViewSet, CategoryViewSet, OrderViewSet, CartViewSet, UserViewSet, ShopViewSet, TagViewSet, LocationViewSet, UserLocationViewSet
@@ -109,6 +110,21 @@ urlpatterns += i18n_patterns(
     path('cart/count/', cart_views.cart_count, name='cart_count'),
     # API для каталога
     path('api/catalog/categories/<int:category_id>/subcategories/', api_views.category_subcategories, name='api_category_subcategories'),
+    
+    # Статические страницы
+    path('how-to-find-product/', static_views.how_to_find_product, name='how_to_find_product'),
+    path('store-addresses/', static_views.store_addresses, name='store_addresses'),
+    path('product-availability/', static_views.product_availability, name='product_availability'),
+    path('contacts/', static_views.contacts, name='contacts'),
+    path('about-company/', static_views.about_company, name='about_company'),
+    path('it-integration/', static_views.it_integration, name='it_integration'),
+    path('retail-networks/', static_views.retail_networks, name='retail_networks'),
+    path('retailnet-solutions/', static_views.retailnet_solutions, name='retailnet_solutions'),
+    path('for-stores/', static_views.for_stores, name='for_stores'),
+    path('add-products/', static_views.add_products, name='add_products'),
+    path('manage-assortment/', static_views.manage_assortment, name='manage_assortment'),
+    path('become-partner/', static_views.become_partner, name='become_partner'),
+    path('support/', static_views.support, name='support'),
 )
 
 if settings.DEBUG:

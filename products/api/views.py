@@ -5,7 +5,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny, I
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import F
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+# PostgreSQL search imports (conditionally imported where needed)
+# from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -173,10 +174,24 @@ class ProductViewSet(viewsets.ModelViewSet):
         if not query:
             return Response({'detail': _('Параметр "q" обязателен для поиска.')}, status=status.HTTP_400_BAD_REQUEST)
 
-        search_query = SearchQuery(query)
-        products = self.get_queryset().annotate(
-            rank=SearchRank(F('search_vector'), search_query)
-        ).filter(search_vector=search_query).order_by('-rank')
+        # Проверяем, используем ли мы PostgreSQL (только PostgreSQL поддерживает SearchVector)
+        from django.conf import settings
+        db_engine = settings.DATABASES['default']['ENGINE']
+        
+        if 'postgresql' in db_engine:
+            # Используем полнотекстовый поиск PostgreSQL
+            from django.contrib.postgres.search import SearchQuery, SearchRank
+            from django.db.models import F
+            search_query = SearchQuery(query)
+            products = self.get_queryset().annotate(
+                rank=SearchRank(F('search_vector'), search_query)
+            ).filter(search_vector=search_query).order_by('-rank')
+        else:
+            # Для других баз данных (например, SQLite) используем простой поиск по названию и описанию
+            from django.db import models
+            products = self.get_queryset().filter(
+                models.Q(name__icontains=query) | models.Q(description__icontains=query)
+            )
 
         page = self.paginate_queryset(products)
         if page is not None:

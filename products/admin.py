@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import (
     User, Category, Shop, Tag, Product, ProductImage, ProductCharacteristic,
     Seller, Order, OrderItem, Review, Cart, CartItem, Commission,
-    Location, UserLocation, PageCategory, Page, PromoCode, Notification, Banner, ProductBanner
+    Location, UserLocation, PageCategory, Page, PromoCode, Notification, Banner, ProductBanner, StaticPage
 )
 
 
@@ -284,3 +284,27 @@ class ProductBannerAdmin(admin.ModelAdmin):
             'fields': ('is_active', 'sort_order')
         }),
     )
+
+
+@admin.register(StaticPage)
+class StaticPageAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug', 'is_active', 'created_at', 'updated_at')
+    list_filter = ('is_active', 'created_at', 'updated_at')
+    search_fields = ('title', 'slug', 'content')
+    prepopulated_fields = {'slug': ('title',)}
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'slug', 'content', 'meta_description', 'is_active')
+        }),
+        ('Даты', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ('created_at', 'updated_at')
+    
+    class Media:
+        css = {
+            'all': ('admin/css/widgets.css',)
+        }
+        js = ('admin/js/textarea_resize.js',)
