@@ -1,0 +1,350 @@
+{% load admin_extras %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Предварительный просмотр мега меню - {{ category.name }}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .preview-header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .preview-header h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        
+        .preview-info {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .mega-menu-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .mega-menu {
+            display: flex;
+            min-height: 400px;
+        }
+        
+        .categories-column {
+            width: 250px;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .category-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .category-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .category-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .category-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .category-count {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .category-item.active .category-count {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .subcategories-column {
+            width: 300px;
+            padding: 20px;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .subcategories-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2c3e50;
+        }
+        
+        .subcategory-group {
+            margin-bottom: 20px;
+        }
+        
+        .subcategory-title {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+        
+        .subcategory-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .subcategory-list li {
+            padding: 4px 0;
+        }
+        
+        .subcategory-list a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .subcategory-list a:hover {
+            text-decoration: underline;
+        }
+        
+        .featured-column {
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .featured-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2c3e50;
+        }
+        
+        .featured-products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+        
+        .product-card {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            background-color: #f8f9fa;
+        }
+        
+        .product-info {
+            padding: 12px;
+        }
+        
+        .product-name {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: #2c3e50;
+            line-height: 1.3;
+        }
+        
+        .product-price {
+            font-size: 14px;
+            font-weight: 600;
+            color: #28a745;
+        }
+        
+        .no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e9ecef;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .preview-actions {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 40px 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .mega-menu {
+                flex-direction: column;
+            }
+            
+            .categories-column,
+            .subcategories-column {
+                width: 100%;
+            }
+            
+            .featured-products {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-header">
+        <h1>Предварительный просмотр мега меню</h1>
+        <div class="preview-info">
+            Категория: <strong>{{ category.name }}</strong> | 
+            Уровень: {{ category.category_level }} | 
+            Товаров: {{ category.products_count }}
+        </div>
+    </div>
+
+    <div class="mega-menu-container">
+        <div class="mega-menu">
+            <!-- Колонка основной категории -->
+            <div class="categories-column">
+                <div class="category-item active">
+                    <div class="category-name">{{ category.name }}</div>
+                    <div class="category-count">{{ category.products_count }} товаров</div>
+                </div>
+                
+                {% for sibling in category.parent.children.all %}
+                    {% if sibling != category %}
+                    <div class="category-item">
+                        <div class="category-name">{{ sibling.name }}</div>
+                        <div class="category-count">{{ sibling.products_count }} товаров</div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Колонка подкатегорий -->
+            <div class="subcategories-column">
+                <div class="subcategories-title">{{ category.name }}</div>
+                
+                {% if subcategories_level_2 %}
+                    {% for subcat_2 in subcategories_level_2 %}
+                    <div class="subcategory-group">
+                        <div class="subcategory-title">{{ subcat_2.name }}</div>
+                        
+                        {% if subcat_2.id in subcategories_level_3 and subcategories_level_3|lookup:subcat_2.id %}
+                        <ul class="subcategory-list">
+                            {% for subcat_3 in subcategories_level_3|lookup:subcat_2.id %}
+                            <li><a href="#">{{ subcat_3.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <ul class="subcategory-list">
+                            <li><a href="#">Все товары</a></li>
+                        </ul>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        Подкатегории не созданы
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Колонка рекомендуемых товаров -->
+            <div class="featured-column">
+                <div class="featured-title">Рекомендуемые товары</div>
+                
+                {% if featured_products %}
+                <div class="featured-products">
+                    {% for product in featured_products %}
+                    <div class="product-card">
+                        {% if product.images.first %}
+                            <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" class="product-image">
+                        {% else %}
+                            <div class="product-image no-image">Нет изображения</div>
+                        {% endif %}
+                        
+                        <div class="product-info">
+                            <div class="product-name">{{ product.name|truncatechars:50 }}</div>
+                            <div class="product-price">{{ product.final_price }} ₽</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <div class="empty-state">
+                        Нет товаров для отображения
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="preview-actions">
+        <button class="btn btn-secondary" onclick="window.close()">Закрыть</button>
+        <a href="/admin/products/category/{{ category.id }}/change/" class="btn btn-primary">Редактировать категорию</a>
+    </div>
+
+    <script>
+        // Add some interactivity to the preview
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

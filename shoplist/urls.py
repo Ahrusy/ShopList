@@ -47,6 +47,7 @@ router.register('userlocations', UserLocationViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('admin/products/', include('products.admin_urls')),
     path('i18n/', set_language, name='set_language'), # URL для смены языка
     path('api/', include(router.urls)),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
@@ -110,6 +111,12 @@ urlpatterns += i18n_patterns(
     path('cart/count/', cart_views.cart_count, name='cart_count'),
     # API для каталога
     path('api/catalog/categories/<int:category_id>/subcategories/', api_views.category_subcategories, name='api_category_subcategories'),
+    # API для мега меню
+    path('api/mega-menu/', include('products.api_urls')),
+    # Дополнительные API endpoints для категорий
+    path('api/categories/<int:category_id>/level3/', api_views.category_subcategories, name='api_category_level3'),
+    path('api/categories/search/', api_views.search_categories, name='api_categories_search'),
+    path('api/categories/stats/', api_views.category_stats, name='api_categories_stats'),
     
     # Статические страницы
     path('how-to-find-product/', static_views.how_to_find_product, name='how_to_find_product'),

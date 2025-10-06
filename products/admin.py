@@ -21,30 +21,120 @@ class CustomUserAdmin(admin.ModelAdmin):
     filter_horizontal = ('groups', 'user_permissions', 'favorites')
 
 
+class SubcategoryInline(admin.TabularInline):
+    """Inline для редактирования подкатегорий"""
+    model = Category
+    fk_name = 'parent'
+    extra = 0
+    fields = ('name', 'slug', 'icon', 'sort_order', 'is_active', 'show_in_megamenu')
+    readonly_fields = ('category_level', 'path', 'products_count')
+    verbose_name = _("Подкатегория")
+    verbose_name_plural = _("Подкатегории")
+    
+    def get_queryset(self, request):
+        """Ограничиваем только прямыми дочерними категориями"""
+        qs = super().get_queryset(request)
+        return qs.order_by('sort_order', 'name')
+
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('slug', 'parent', 'level', 'sort_order', 'is_active', 'show_in_megamenu', 'created_at')
-    list_filter = ('is_active', 'show_in_megamenu', 'parent', 'created_at')
-    search_fields = ('slug',)
+    list_display = ('get_tree_display', 'name', 'category_level', 'products_count', 'sort_order', 'is_active', 'show_in_megamenu', 'created_at')
+    list_filter = ('is_active', 'show_in_megamenu', 'category_level', 'created_at')
+    search_fields = ('name', 'slug', 'description')
     list_editable = ('sort_order', 'is_active', 'show_in_megamenu')
-    ordering = ('sort_order', 'slug')
+    ordering = ('category_level', 'sort_order', 'name')
+    inlines = [SubcategoryInline]
+    actions = ['create_subcategories', 'update_products_count', 'preview_mega_menu']
     
     fieldsets = (
         (_('Основная информация'), {
-            'fields': ('slug', 'icon')
+            'fields': ('name', 'slug', 'description', 'icon')
         }),
         (_('Иерархия'), {
-            'fields': ('parent',)
+            'fields': ('parent', 'category_level', 'path'),
+            'classes': ('collapse',)
+        }),
+        (_('Мега меню'), {
+            'fields': ('mega_menu_image', 'mega_menu_description', 'featured_products'),
+            'classes': ('collapse',)
         }),
         (_('Настройки'), {
-            'fields': ('sort_order', 'is_active', 'show_in_megamenu')
+            'fields': ('sort_order', 'is_active', 'show_in_megamenu', 'has_products', 'products_count')
         }),
     )
     
-    def level(self, obj):
-        return obj.level
-    level.short_description = _('Уровень')
-    level.admin_order_field = 'parent'
+    readonly_fields = ('category_level', 'path', 'products_count', 'has_products')
+    filter_horizontal = ('featured_products',)
+    
+    def get_tree_display(self, obj):
+        """Отображает категорию с отступами для визуализации дерева"""
+        indent = '&nbsp;&nbsp;&nbsp;&nbsp;' * obj.category_level
+        icon = '📁' if obj.get_children().exists() else '📄'
+        return f'{indent}{icon} {obj.name}'
+    get_tree_display.short_description = _('Структура категорий')
+    get_tree_display.allow_tags = True
+    
+    def get_queryset(self, request):
+        """Оптимизируем запросы и сортируем по иерархии"""
+        qs = super().get_queryset(request)
+        return qs.select_related('parent').prefetch_related('children', 'products')
+    
+    def create_subcategories(self, request, queryset):
+        """Массовое действие для создания подкатегорий"""
+        created_count = 0
+        for category in queryset:
+            try:
+                subcategories = category.ensure_subcategories()
+                created_count += len(subcategories)
+            except Exception as e:
+                self.message_user(request, f'Ошибка при создании подкатегорий для {category.name}: {str(e)}', level='ERROR')
+        
+        if created_count > 0:
+            self.message_user(request, f'Создано {created_count} подкатегорий', level='SUCCESS')
+        else:
+            self.message_user(request, 'Подкатегории уже существуют или не могут быть созданы', level='INFO')
+    
+    create_subcategories.short_description = _('Создать подкатегории для выбранных категорий')
+    
+    def update_products_count(self, request, queryset):
+        """Массовое действие для обновления счетчиков товаров"""
+        updated_count = 0
+        for category in queryset:
+            old_count = category.products_count
+            new_count = category.update_products_count()
+            category.save()
+            if old_count != new_count:
+                updated_count += 1
+        
+        self.message_user(request, f'Обновлены счетчики для {updated_count} категорий', level='SUCCESS')
+    
+    update_products_count.short_description = _('Обновить счетчики товаров')
+    
+    def preview_mega_menu(self, request, queryset):
+        """Предварительный просмотр мега меню"""
+        if queryset.count() == 1:
+            category = queryset.first()
+            # Перенаправляем на страницу предварительного просмотра
+            from django.shortcuts import redirect
+            return redirect(f'/admin/products/category-preview/{category.id}/')
+        else:
+            self.message_user(request, 'Выберите только одну категорию для предварительного просмотра', level='WARNING')
+    
+    preview_mega_menu.short_description = _('Предварительный просмотр мега меню')
+    
+    def save_model(self, request, obj, form, change):
+        """Переопределяем сохранение для обновления иерархии"""
+        super().save_model(request, obj, form, change)
+        # Обновляем счетчик товаров после сохранения
+        obj.update_products_count()
+        obj.save()
+    
+    class Media:
+        css = {
+            'all': ('admin/css/category_admin.css',)
+        }
+        js = ('admin/js/category_admin.js',)
 
 
 @admin.register(Shop)

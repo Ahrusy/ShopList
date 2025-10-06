@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Простой тест каталога</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 p-8">
+    <h1 class="text-2xl font-bold mb-4">Простой тест каталога</h1>
+    
+    <div class="relative">
+        <button id="catalogButton" class="flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+            <i class="fas fa-bars"></i>
+            <span>Каталог товаров</span>
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        
+        <div id="catalogMegaMenu" class="absolute top-full left-0 mt-1 w-96 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 hidden">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">Каталог</h2>
+                    <button id="closeCatalog" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <p class="text-gray-600">Мегаменю открыто!</p>
+                <div class="mt-4 space-y-2">
+                    <div class="p-2 bg-gray-50 rounded">Категория 1</div>
+                    <div class="p-2 bg-gray-50 rounded">Категория 2</div>
+                    <div class="p-2 bg-gray-50 rounded">Категория 3</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-8 p-4 bg-yellow-50 rounded-lg">
+        <h3 class="font-semibold mb-2">Статус:</h3>
+        <div id="status" class="text-sm text-gray-600">Готов к тестированию</div>
+    </div>
+
+    <style>
+        #catalogMegaMenu.hidden {
+            display: none !important;
+        }
+        
+        #catalogMegaMenu:not(.hidden) {
+            display: block !important;
+        }
+    </style>
+
+    <script>
+        let isMenuOpen = false;
+        let justOpened = false;
+        
+        const catalogButton = document.getElementById('catalogButton');
+        const catalogMegaMenu = document.getElementById('catalogMegaMenu');
+        const closeCatalog = document.getElementById('closeCatalog');
+        const status = document.getElementById('status');
+        
+        function updateStatus(message) {
+            status.textContent = message;
+            console.log(message);
+        }
+        
+        function openMenu() {
+            updateStatus('Открываем меню...');
+            catalogMegaMenu.classList.remove('hidden');
+            isMenuOpen = true;
+            justOpened = true;
+            
+            // Сбрасываем флаг через 500ms
+            setTimeout(() => {
+                justOpened = false;
+                updateStatus('Меню открыто, можно закрывать кликом вне меню');
+            }, 500);
+        }
+        
+        function closeMenu() {
+            updateStatus('Закрываем меню...');
+            catalogMegaMenu.classList.add('hidden');
+            isMenuOpen = false;
+            justOpened = false;
+        }
+        
+        // Обработчик кнопки каталога
+        catalogButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            updateStatus('Клик по кнопке каталога');
+            
+            if (isMenuOpen) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        });
+        
+        // Обработчик кнопки закрытия
+        closeCatalog.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeMenu();
+        });
+        
+        // Предотвращаем закрытие при клике внутри меню
+        catalogMegaMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+            updateStatus('Клик внутри меню - не закрываем');
+        });
+        
+        // Закрытие при клике вне меню
+        document.addEventListener('click', function(e) {
+            if (!isMenuOpen) return;
+            
+            if (justOpened) {
+                updateStatus('Меню только что открылось - игнорируем клик');
+                return;
+            }
+            
+            // Проверяем, что клик не по кнопке каталога и не внутри меню
+            if (!catalogButton.contains(e.target) && !catalogMegaMenu.contains(e.target)) {
+                updateStatus('Клик вне меню - закрываем');
+                closeMenu();
+            }
+        });
+        
+        updateStatus('Скрипт загружен, готов к тестированию');
+    </script>
+</body>
+</html>

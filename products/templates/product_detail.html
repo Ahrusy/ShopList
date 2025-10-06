@@ -193,51 +193,9 @@
     {% if related_products %}
     <div class="mt-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <h2 class="text-xl font-bold text-gray-900 mb-6">Похожие товары</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {% for related_product in related_products %}
-            <div class="product-card border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow bg-white h-full flex flex-col">
-                <div class="aspect-square bg-gray-100">
-                    {% if related_product.images.first %}
-                        <img src="{{ related_product.images.first.image.url }}" 
-                             alt="{{ related_product.name }}" 
-                             class="w-full h-full object-cover">
-                    {% else %}
-                        <div class="w-full h-full flex items-center justify-center">
-                            <i class="fas fa-image text-gray-400 text-2xl"></i>
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="p-3 flex-grow">
-                    <h3 class="text-sm font-medium text-gray-900 mb-1 truncate">{{ related_product.name }}</h3>
-                    <div class="flex items-center mb-2">
-                        <div class="flex text-yellow-400 text-xs">
-                            {% for i in "12345" %}
-                                {% if forloop.counter <= related_product.rating|floatformat:0 %}
-                                    <i class="fas fa-star"></i>
-                                {% else %}
-                                    <i class="far fa-star"></i>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                        <span class="text-xs text-gray-500 ml-1">{{ related_product.rating|floatformat:1 }}</span>
-                    </div>
-                    <div class="flex items-center justify-between mt-auto">
-                        {% if related_product.discount_price %}
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-green-600">{{ related_product.discount_price|floatformat:0 }} ₽</span>
-                                <span class="text-xs text-gray-500 line-through">{{ related_product.price|floatformat:0 }} ₽</span>
-                            </div>
-                        {% else %}
-                            <span class="text-sm font-bold text-green-600">{{ related_product.price|floatformat:0 }} ₽</span>
-                        {% endif %}
-                        {% if related_product.stock_quantity > 0 %}
-                            <span class="text-xs text-green-600">В наличии</span>
-                        {% else %}
-                            <span class="text-xs text-red-600">Нет</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+        <div class="flex flex-wrap gap-6 justify-start">
+            {% for product in related_products %}
+                {% include 'components/product_card.html' %}
             {% endfor %}
         </div>
     </div>

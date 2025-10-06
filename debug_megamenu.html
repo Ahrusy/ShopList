@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Mega Menu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="p-8">
+        <h1 class="text-2xl font-bold mb-4">Debug Mega Menu</h1>
+        
+        <!-- Кнопка каталога -->
+        <div class="relative">
+            <button id="catalogButton" class="flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                </svg>
+                <span class="font-medium">Каталог</span>
+                <i class="fas fa-chevron-down text-xs"></i>
+            </button>
+            
+            <!-- Мега меню -->
+            <div id="catalogMegaMenu" class="absolute top-full left-0 mt-1 w-screen max-w-4xl bg-white border border-gray-200 rounded-lg shadow-2xl z-50 hidden">
+                <div class="flex h-96">
+                    <!-- Левая панель -->
+                    <div class="w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto">
+                        <div class="p-4">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Категории</h3>
+                            <ul class="space-y-1" id="categoriesList">
+                                <li>
+                                    <a href="#" class="catalog-category-link flex items-center p-3 text-sm hover:bg-blue-50 hover:text-blue-600 rounded-md transition-all group" 
+                                       data-category-id="1" data-category-name="Электроника">
+                                        <div class="w-5 h-5 mr-3 bg-blue-100 rounded-sm flex items-center justify-center">
+                                            <i class="fas fa-laptop text-xs text-blue-500"></i>
+                                        </div>
+                                        <span class="font-medium flex-grow">Электроника</span>
+                                        <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" class="catalog-category-link flex items-center p-3 text-sm hover:bg-blue-50 hover:text-blue-600 rounded-md transition-all group" 
+                                       data-category-id="2" data-category-name="Одежда">
+                                        <div class="w-5 h-5 mr-3 bg-blue-100 rounded-sm flex items-center justify-center">
+                                            <i class="fas fa-tshirt text-xs text-blue-500"></i>
+                                        </div>
+                                        <span class="font-medium flex-grow">Одежда</span>
+                                        <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Правая панель -->
+                    <div class="flex-1 overflow-y-auto bg-white">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 id="categoryTitle" class="text-xl font-bold text-gray-900">Выберите категорию</h2>
+                                <button id="closeCatalog" class="text-gray-400 hover:text-gray-600 text-xl p-2">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            
+                            <div id="categoryContent" class="space-y-6">
+                                <div class="text-center text-gray-500 py-12">
+                                    <i class="fas fa-mouse-pointer text-4xl mb-4 text-gray-300"></i>
+                                    <p class="text-lg mb-2">Выберите категорию слева</p>
+                                    <p class="text-sm text-gray-400">или воспользуйтесь поиском</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Лог отладки -->
+        <div class="mt-8">
+            <h2 class="text-lg font-bold mb-2">Debug Log:</h2>
+            <div id="debugLog" class="bg-black text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        // Перехватываем console.log для отображения в debug log
+        const debugLog = document.getElementById('debugLog');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToDebugLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-400' : type === 'warn' ? 'text-yellow-400' : 'text-green-400';
+            debugLog.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToDebugLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToDebugLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToDebugLog(args.join(' '), 'warn');
+        };
+        
+        // Простая версия MegaMenuManager для тестирования
+        class SimpleMegaMenuManager {
+            constructor() {
+                this.init();
+            }
+            
+            init() {
+                console.log('Simple MegaMenu initialized');
+                
+                this.catalogButton = document.getElementById('catalogButton');
+                this.catalogMegaMenu = document.getElementById('catalogMegaMenu');
+                this.closeCatalog = document.getElementById('closeCatalog');
+                
+                console.log('catalogButton:', this.catalogButton);
+                console.log('catalogMegaMenu:', this.catalogMegaMenu);
+                console.log('closeCatalog:', this.closeCatalog);
+                
+                if (!this.catalogButton || !this.catalogMegaMenu) {
+                    console.error('Elements not found!');
+                    return;
+                }
+                
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                console.log('Setting up event listeners');
+                
+                this.catalogButton.addEventListener('click', (e) => {
+                    console.log('Catalog button clicked!');
+                    this.toggleMenu(e);
+                });
+                
+                if (this.closeCatalog) {
+                    this.closeCatalog.addEventListener('click', (e) => {
+                        console.log('Close button clicked!');
+                        this.closeMenu(e);
+                    });
+                }
+            }
+            
+            toggleMenu(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                console.log('Toggling menu');
+                const isHidden = this.catalogMegaMenu.classList.contains('hidden');
+                console.log('Is hidden:', isHidden);
+                
+                if (isHidden) {
+                    console.log('Opening menu');
+                    this.catalogMegaMenu.classList.remove('hidden');
+                } else {
+                    console.log('Closing menu');
+                    this.catalogMegaMenu.classList.add('hidden');
+                }
+            }
+            
+            closeMenu(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                console.log('Closing menu');
+                this.catalogMegaMenu.classList.add('hidden');
+            }
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing MegaMenu');
+            window.megaMenuManager = new SimpleMegaMenuManager();
+        });
+    </script>
+</body>
+</html>

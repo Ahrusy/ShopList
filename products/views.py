@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Min, Max
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.contrib.messages.views import SuccessMessageMixin
@@ -14,13 +15,14 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
 from django.db.models import F, Count
 from decimal import Decimal
+from django.db import models
 # PostgreSQL search imports (conditionally imported where needed)
 # from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django_filters.views import FilterView
 from .filters import ProductFilter # Этот файл еще не создан, но будет создан позже
 from .forms import ProductForm, ProductImageForm, CategoryForm, ShopForm, TagForm, OrderForm, OrderItemForm, TaskForm, MoodTrackingForm
 from .models import Product, Category, Shop, Tag, ProductImage, User, Location, UserLocation, PageCategory, Page, Order, OrderItem, Cart, CartItem, Banner, ProductBanner, Task, MoodTracking
-from .services.product_service import ProductService # Импортируем сервис
+# from .services.product_service import ProductService # Импортируем сервис
 from django.forms import inlineformset_factory
 
 # Аутентификация перенесена в products/views/auth_views.py
@@ -73,9 +75,8 @@ def index(request):
     # Получаем корневые категории для мегаменю
     root_categories = Category.objects.filter(
         parent__isnull=True, 
-        is_active=True, 
-        show_in_megamenu=True
-    ).order_by('sort_order', 'slug')
+        is_active=True
+    ).order_by('sort_order', 'name')
     
     # Если это страница категории, перенаправляем на правильный URL категории
     if not is_main_page and category_param:
@@ -164,12 +165,16 @@ def load_more_products(request):
 
 
 def category_view(request, category_slug):
-    """Страница категории в стиле Ozon"""
-    category = get_object_or_404(Category, slug=category_slug)
+    """Страница категории в стиле Ozon с расширенной функциональностью"""
+    category = get_object_or_404(Category, slug=category_slug, is_active=True)
     
-    # Получаем товары категории
+    # Получаем товары категории и всех подкатегорий
+    category_ids = [category.id]
+    all_subcategories = category.get_all_children()
+    category_ids.extend([subcat.id for subcat in all_subcategories])
+    
     products = Product.objects.filter(
-        category=category, 
+        category_id__in=category_ids, 
         is_active=True
     ).select_related('seller', 'category').prefetch_related('images', 'tags', 'shops', 'characteristics')
     
@@ -182,8 +187,41 @@ def category_view(request, category_slug):
         products = products.filter(
             Q(name__icontains=search_query) | 
             Q(description__icontains=search_query) |
-            Q(tags__name__icontains=search_query)
+            Q(tags__name__icontains=search_query) |
+            Q(brand__icontains=search_query)
         ).distinct()
+    
+    # Фильтрация по цене
+    price_min = request.GET.get('price_min')
+    price_max = request.GET.get('price_max')
+    if price_min:
+        try:
+            products = products.filter(price__gte=float(price_min))
+        except ValueError:
+            pass
+    if price_max:
+        try:
+            products = products.filter(price__lte=float(price_max))
+        except ValueError:
+            pass
+    
+    # Фильтрация по бренду
+    brand = request.GET.get('brand')
+    if brand:
+        products = products.filter(brand__icontains=brand)
+    
+    # Фильтрация по рейтингу
+    min_rating = request.GET.get('min_rating')
+    if min_rating:
+        try:
+            products = products.filter(rating__gte=float(min_rating))
+        except ValueError:
+            pass
+    
+    # Фильтрация по наличию
+    in_stock = request.GET.get('in_stock')
+    if in_stock == '1':
+        products = products.filter(stock_quantity__gt=0)
     
     # Сортировка
     sort_by = request.GET.get('sort', 'popularity')
@@ -192,29 +230,180 @@ def category_view(request, category_slug):
     elif sort_by == 'price_desc':
         products = products.order_by('-price')
     elif sort_by == 'rating':
-        products = products.order_by('-rating')
+        products = products.order_by('-rating', '-reviews_count')
+    elif sort_by == 'newest':
+        products = products.order_by('-created_at')
+    elif sort_by == 'name_asc':
+        products = products.order_by('name')
+    elif sort_by == 'name_desc':
+        products = products.order_by('-name')
+    else:  # popularity
+        products = products.order_by('-views_count', '-reviews_count', '-created_at')
+    
+    # Пагинация
+    per_page = int(request.GET.get('per_page', 20))
+    if per_page not in [12, 20, 40, 60]:
+        per_page = 20
+    
+    paginator = Paginator(products, per_page)
+    page_number = request.GET.get('page')
+    products_page = paginator.get_page(page_number)
+    
+    # Подкатегории (прямые дочерние)
+    subcategories = Category.objects.filter(
+        parent=category, 
+        is_active=True
+    ).order_by('sort_order', 'name')
+    
+    # Построение breadcrumbs
+    breadcrumbs = []
+    current_category = category
+    while current_category:
+        breadcrumbs.insert(0, current_category)
+        current_category = current_category.parent
+    
+    # Получаем уникальные бренды для фильтра
+    available_brands = products.values_list('brand', flat=True).distinct().exclude(brand='')
+    available_brands = [brand for brand in available_brands if brand]
+    
+    # Статистика по ценам для фильтра
+    price_stats = products.aggregate(
+        min_price=models.Min('price'),
+        max_price=models.Max('price')
+    )
+    
+    context = {
+        'category': category,
+        'products': products_page,
+        'categories': categories,
+        'subcategories': subcategories,
+        'breadcrumbs': breadcrumbs,
+        'search_query': search_query,
+        'sort_by': sort_by,
+        'per_page': per_page,
+        'available_brands': available_brands,
+        'price_stats': price_stats,
+        'current_filters': {
+            'price_min': price_min,
+            'price_max': price_max,
+            'brand': brand,
+            'min_rating': min_rating,
+            'in_stock': in_stock,
+        },
+        'total_products': paginator.count,
+    }
+    return render(request, 'category_ozon.html', context)
+
+
+def catalog_view(request):
+    """Главная страница каталога с категориями всех уровней"""
+    # Получаем корневые категории
+    root_categories = Category.objects.filter(
+        parent__isnull=True,
+        is_active=True
+    ).prefetch_related('children__children').order_by('sort_order', 'name')
+    
+    # Популярные категории (с наибольшим количеством товаров)
+    popular_categories = Category.objects.filter(
+        is_active=True,
+        has_products=True
+    ).order_by('-products_count')[:8]
+    
+    # Новые товары
+    new_products = Product.objects.filter(
+        is_active=True
+    ).select_related('category', 'seller').prefetch_related('images').order_by('-created_at')[:12]
+    
+    # Популярные товары
+    popular_products = Product.objects.filter(
+        is_active=True
+    ).select_related('category', 'seller').prefetch_related('images').order_by('-views_count', '-reviews_count')[:12]
+    
+    context = {
+        'root_categories': root_categories,
+        'popular_categories': popular_categories,
+        'new_products': new_products,
+        'popular_products': popular_products,
+    }
+    return render(request, 'catalog.html', context)
+
+
+def category_products_ajax(request, category_slug):
+    """AJAX endpoint для загрузки товаров категории"""
+    category = get_object_or_404(Category, slug=category_slug, is_active=True)
+    
+    # Получаем товары категории и всех подкатегорий
+    category_ids = [category.id]
+    all_subcategories = category.get_all_children()
+    category_ids.extend([subcat.id for subcat in all_subcategories])
+    
+    products = Product.objects.filter(
+        category_id__in=category_ids, 
+        is_active=True
+    ).select_related('seller', 'category').prefetch_related('images')
+    
+    # Применяем фильтры (аналогично category_view)
+    search_query = request.GET.get('q')
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(tags__name__icontains=search_query) |
+            Q(brand__icontains=search_query)
+        ).distinct()
+    
+    # Фильтрация по цене
+    price_min = request.GET.get('price_min')
+    price_max = request.GET.get('price_max')
+    if price_min:
+        try:
+            products = products.filter(price__gte=float(price_min))
+        except ValueError:
+            pass
+    if price_max:
+        try:
+            products = products.filter(price__lte=float(price_max))
+        except ValueError:
+            pass
+    
+    # Сортировка
+    sort_by = request.GET.get('sort', 'popularity')
+    if sort_by == 'price_asc':
+        products = products.order_by('price')
+    elif sort_by == 'price_desc':
+        products = products.order_by('-price')
+    elif sort_by == 'rating':
+        products = products.order_by('-rating', '-reviews_count')
     elif sort_by == 'newest':
         products = products.order_by('-created_at')
     else:  # popularity
         products = products.order_by('-views_count', '-reviews_count')
     
     # Пагинация
-    paginator = Paginator(products, 20)
-    page_number = request.GET.get('page')
-    products = paginator.get_page(page_number)
+    page = request.GET.get('page', 1)
+    per_page = int(request.GET.get('per_page', 20))
     
-    # Подкатегории (если есть)
-    subcategories = Category.objects.filter(parent=category, is_active=True) if hasattr(category, 'parent') else []
+    paginator = Paginator(products, per_page)
+    try:
+        products_page = paginator.get_page(page)
+    except:
+        return JsonResponse({'error': 'Invalid page'}, status=400)
     
-    context = {
-        'category': category,
-        'products': products,
-        'categories': categories,
-        'subcategories': subcategories,
-        'search_query': search_query,
-        'sort_by': sort_by,
-    }
-    return render(request, 'category_ozon.html', context)
+    # Рендерим HTML для товаров
+    products_html = render_to_string('products/includes/product_cards.html', {
+        'products': products_page
+    })
+    
+    return JsonResponse({
+        'html': products_html,
+        'has_next': products_page.has_next(),
+        'has_previous': products_page.has_previous(),
+        'next_page': products_page.next_page_number() if products_page.has_next() else None,
+        'previous_page': products_page.previous_page_number() if products_page.has_previous() else None,
+        'current_page': int(page),
+        'total_pages': paginator.num_pages,
+        'total_products': paginator.count
+    })
 
 class ProductListView(FilterView):
     model = Product
@@ -841,4 +1030,20 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 
-from .services.google_calendar_service import GoogleCalendarService
+# from .services.google_calendar_service import GoogleCalendarService
+
+@staff_member_required
+def product_banners_management(request):
+    """
+    Управление товарными баннерами
+    """
+    from .models import ProductBanner
+    
+    banners = ProductBanner.objects.all().order_by('sort_order', '-created_at')
+    
+    context = {
+        'banners': banners,
+        'title': 'Управление товарными баннерами'
+    }
+    
+    return render(request, 'admin/product_banners_management.html', context)

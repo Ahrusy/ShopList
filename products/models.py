@@ -120,6 +120,17 @@ class Category(models.Model): # Изменено с TranslatableModel
     show_in_megamenu = models.BooleanField(default=True, verbose_name=_("Показывать в мегаменю"))
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата создания"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+    
+    # Новые поля для улучшенной иерархии
+    category_level = models.PositiveIntegerField(default=0, verbose_name=_("Уровень"))
+    path = models.CharField(max_length=500, blank=True, verbose_name=_("Путь"))
+    has_products = models.BooleanField(default=False, verbose_name=_("Есть товары"))
+    products_count = models.PositiveIntegerField(default=0, verbose_name=_("Количество товаров"))
+    
+    # Мета-данные для мега меню
+    mega_menu_image = models.ImageField(upload_to='categories/', blank=True, null=True, verbose_name=_("Изображение для мега меню"))
+    mega_menu_description = models.TextField(blank=True, verbose_name=_("Описание для мега меню"))
+    featured_products = models.ManyToManyField('Product', blank=True, related_name='featured_in_categories', verbose_name=_("Рекомендуемые товары"))
 
     def __str__(self):
         return self.name
@@ -154,11 +165,68 @@ class Category(models.Model): # Изменено с TranslatableModel
         for child in children:
             children.extend(child.get_all_children())
         return children
+    
+    def get_level_2_children(self):
+        """Возвращает подкатегории 2-го уровня"""
+        if self.category_level == 0:  # Корневая категория
+            return self.children.filter(is_active=True, category_level=1).order_by('sort_order', 'name')
+        return Category.objects.none()
+    
+    def get_level_3_children(self):
+        """Возвращает подкатегории 3-го уровня"""
+        if self.category_level == 1:  # Категория 2-го уровня
+            return self.children.filter(is_active=True, category_level=2).order_by('sort_order', 'name')
+        return Category.objects.none()
+    
+    def ensure_subcategories(self):
+        """Создает подкатегории если их нет"""
+        from .utils import CategorySubcategoryGenerator
+        generator = CategorySubcategoryGenerator()
+        return generator.ensure_subcategories_for_category(self)
+    
+    def update_path(self):
+        """Обновляет путь категории"""
+        if self.parent:
+            self.path = f"{self.parent.path}/{self.slug}" if self.parent.path else self.slug
+        else:
+            self.path = self.slug
+    
+    def update_level(self):
+        """Обновляет уровень категории"""
+        level = 0
+        parent = self.parent
+        while parent:
+            level += 1
+            parent = parent.parent
+        self.category_level = level
+    
+    def update_products_count(self):
+        """Обновляет количество товаров в категории"""
+        count = self.products.filter(is_active=True).count()
+        # Добавляем товары из подкатегорий
+        for child in self.get_all_children():
+            count += child.products.filter(is_active=True).count()
+        self.products_count = count
+        self.has_products = count > 0
+        return count
+    
+    def save(self, *args, **kwargs):
+        """Переопределяем save для автоматического обновления level и path"""
+        self.update_level()
+        self.update_path()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Категория")
         verbose_name_plural = _("Категории")
         ordering = ['sort_order', 'slug']
+        indexes = [
+            models.Index(fields=['parent', 'is_active', 'category_level']),
+            models.Index(fields=['category_level', 'sort_order']),
+            models.Index(fields=['path']),
+            models.Index(fields=['show_in_megamenu', 'is_active']),
+            models.Index(fields=['has_products', 'is_active']),
+        ]
 
 
 class Shop(models.Model): # Изменено с TranslatableModel
@@ -238,6 +306,7 @@ class Product(models.Model): # Изменено с TranslatableModel
     shops = models.ManyToManyField(Shop, related_name='products', verbose_name=_("Магазины"))
     tags = models.ManyToManyField(Tag, blank=True, related_name='products', verbose_name=_("Теги"))
     sku = models.CharField(max_length=100, unique=True, blank=True, verbose_name=_("Артикул"))
+    brand = models.CharField(max_length=100, blank=True, verbose_name=_("Бренд"))
     stock_quantity = models.PositiveIntegerField(default=0, verbose_name=_("Количество на складе"))
     is_active = models.BooleanField(default=True, verbose_name=_("Активен"))
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00, verbose_name=_("Рейтинг"))
@@ -288,14 +357,72 @@ class ProductImage(models.Model):
     is_primary = models.BooleanField(default=False, verbose_name=_("Основное изображение"))
     order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата создания"))
+    
+    # Новые поля для улучшенной обработки изображений
+    width = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Ширина"))
+    height = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Высота"))
+    file_size = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Размер файла (байты)"))
+    
+    # Различные размеры изображений
+    thumbnail = models.ImageField(upload_to='products/thumbnails/%Y/%m/%d/', blank=True, null=True, verbose_name=_("Миниатюра"))
+    medium = models.ImageField(upload_to='products/medium/%Y/%m/%d/', blank=True, null=True, verbose_name=_("Средний размер"))
+    large = models.ImageField(upload_to='products/large/%Y/%m/%d/', blank=True, null=True, verbose_name=_("Большой размер"))
+    
+    # Дополнительные метаданные
+    format = models.CharField(max_length=10, blank=True, verbose_name=_("Формат файла"))
+    color_mode = models.CharField(max_length=20, blank=True, verbose_name=_("Цветовая модель"))
 
     def __str__(self):
         return f"{self.product.name} - {self.alt_text or 'Изображение'}"
+    
+    def get_thumbnail_url(self):
+        """Возвращает URL миниатюры или основного изображения"""
+        return self.thumbnail.url if self.thumbnail else self.image.url
+    
+    def get_medium_url(self):
+        """Возвращает URL среднего размера или основного изображения"""
+        return self.medium.url if self.medium else self.image.url
+    
+    def get_large_url(self):
+        """Возвращает URL большого размера или основного изображения"""
+        return self.large.url if self.large else self.image.url
+    
+    def get_responsive_urls(self):
+        """Возвращает словарь с URL всех размеров"""
+        return {
+            'thumbnail': self.get_thumbnail_url(),
+            'medium': self.get_medium_url(),
+            'large': self.get_large_url(),
+            'original': self.image.url
+        }
+    
+    def save(self, *args, **kwargs):
+        """Переопределяем save для автоматического заполнения метаданных"""
+        if self.image and hasattr(self.image, 'file'):
+            try:
+                from PIL import Image
+                img = Image.open(self.image.file)
+                self.width, self.height = img.size
+                self.format = img.format
+                self.color_mode = img.mode
+                
+                # Получаем размер файла
+                self.image.file.seek(0, 2)  # Переходим в конец файла
+                self.file_size = self.image.file.tell()
+                self.image.file.seek(0)  # Возвращаемся в начало
+            except Exception:
+                pass  # Если не удалось получить метаданные, продолжаем без них
+        
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Изображение товара")
         verbose_name_plural = _("Изображения товаров")
         ordering = ['order', 'created_at']
+        indexes = [
+            models.Index(fields=['product', 'is_primary']),
+            models.Index(fields=['product', 'order']),
+        ]
 
 
 class ProductCharacteristic(models.Model):

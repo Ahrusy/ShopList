@@ -1,0 +1,236 @@
+{% load static %}
+{% load i18n %}
+
+<!-- 3-Level Category Structure Template -->
+<div class="mega-menu-subcategories">
+    <!-- Level 2 Categories (shown in middle column on desktop) -->
+    {% if level2_categories %}
+        <div class="level2-categories-list space-y-2">
+            {% for level2_cat in level2_categories %}
+                <div class="level2-category-item cursor-pointer" 
+                     data-category-id="{{ level2_cat.id }}"
+                     data-category-name="{{ level2_cat.name }}"
+                     data-category-slug="{{ level2_cat.slug }}"
+                     data-category-level="2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <!-- Level 2 Category Icon/Image -->
+                            {% if level2_cat.mega_menu_image %}
+                                <img src="{{ level2_cat.mega_menu_image.url }}" 
+                                     alt="{{ level2_cat.name }}" 
+                                     class="w-8 h-8 rounded object-cover">
+                            {% elif level2_cat.icon %}
+                                <i class="{{ level2_cat.icon }} text-lg text-blue-600"></i>
+                            {% else %}
+                                <div class="w-8 h-8 category-image-placeholder rounded">
+                                    <i class="fas fa-folder-open text-blue-500"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <div>
+                                <h4 class="font-medium text-gray-900">{{ level2_cat.name }}</h4>
+                                {% if level2_cat.mega_menu_description %}
+                                    <p class="text-xs text-gray-500 mt-1">{{ level2_cat.mega_menu_description|truncatechars:50 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            {% if level2_cat.products_count %}
+                                <span class="category-count-badge">{{ level2_cat.products_count }}</span>
+                            {% endif %}
+                            {% if level2_cat.children.exists %}
+                                <i class="fas fa-chevron-right text-gray-400 text-sm"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Quick preview of level 3 categories -->
+                    {% if level2_cat.children.exists %}
+                        <div class="mt-2 pl-11">
+                            <div class="flex flex-wrap gap-1">
+                                {% for level3_cat in level2_cat.children.all|slice:":4" %}
+                                    <span class="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded hover:bg-blue-100 hover:text-blue-600 transition-colors cursor-pointer"
+                                          data-category-id="{{ level3_cat.id }}"
+                                          data-category-slug="{{ level3_cat.slug }}">
+                                        {{ level3_cat.name }}
+                                    </span>
+                                {% endfor %}
+                                {% if level2_cat.children.count > 4 %}
+                                    <span class="inline-block px-2 py-1 text-gray-400 text-xs">
+                                        +{{ level2_cat.children.count|add:"-4" }} еще
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Level 3 Categories (shown in main content area) -->
+    {% if level3_categories %}
+        <div class="level3-categories-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mobile-category-grid">
+            {% for level3_cat in level3_categories %}
+                <div class="level3-category-card">
+                    <!-- Category Image -->
+                    <div class="aspect-w-16 aspect-h-9 bg-gray-100">
+                        {% if level3_cat.mega_menu_image %}
+                            <img src="{{ level3_cat.mega_menu_image.url }}" 
+                                 alt="{{ level3_cat.name }}" 
+                                 class="w-full h-32 object-cover category-image"
+                                 loading="lazy">
+                        {% else %}
+                            <div class="w-full h-32 category-image-placeholder">
+                                <div class="flex flex-col items-center justify-center h-full">
+                                    {% if level3_cat.icon %}
+                                        <i class="{{ level3_cat.icon }} text-3xl text-gray-400 mb-2"></i>
+                                    {% else %}
+                                        <i class="fas fa-image text-3xl text-gray-400 mb-2"></i>
+                                    {% endif %}
+                                    <span class="text-xs text-gray-500">{{ level3_cat.name|truncatechars:15 }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Category Info -->
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <h3 class="font-semibold text-sm lg:text-base text-gray-900 line-clamp-2">
+                                <a href="/category/{{ level3_cat.slug }}/" 
+                                   class="hover:text-blue-600 transition-colors">
+                                    {{ level3_cat.name }}
+                                </a>
+                            </h3>
+                            {% if level3_cat.icon %}
+                                <i class="{{ level3_cat.icon }} text-lg text-blue-600 flex-shrink-0 ml-2"></i>
+                            {% endif %}
+                        </div>
+                        
+                        {% if level3_cat.mega_menu_description %}
+                            <p class="text-gray-600 text-xs lg:text-sm mb-3 line-clamp-2">
+                                {{ level3_cat.mega_menu_description }}
+                            </p>
+                        {% endif %}
+                        
+                        <!-- Category Stats -->
+                        <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                            <span class="flex items-center">
+                                <i class="fas fa-box text-xs mr-1"></i>
+                                {{ level3_cat.products_count|default:0 }} товаров
+                            </span>
+                            {% if level3_cat.has_products %}
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full">В наличии</span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full">Скоро</span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Featured Products Preview -->
+                        {% if level3_cat.featured_products.exists %}
+                            <div class="mb-3">
+                                <h4 class="text-xs font-medium text-gray-700 mb-2">Популярные товары:</h4>
+                                <div class="space-y-1">
+                                    {% for product in level3_cat.featured_products.all|slice:":2" %}
+                                        <div class="product-preview-card">
+                                            <div class="flex items-center space-x-2">
+                                                {% if product.images.first %}
+                                                    <img src="{{ product.images.first.thumbnail.url }}" 
+                                                         alt="{{ product.name }}" 
+                                                         class="w-8 h-8 rounded object-cover"
+                                                         loading="lazy">
+                                                {% else %}
+                                                    <div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
+                                                        <i class="fas fa-image text-gray-400 text-xs"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-xs font-medium text-gray-900 truncate">{{ product.name }}</p>
+                                                    <p class="text-xs text-blue-600 font-semibold">{{ product.price }} ₽</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Action Button -->
+                        <div class="pt-3 border-t border-gray-100">
+                            <a href="/category/{{ level3_cat.slug }}/" 
+                               class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm group">
+                                Смотреть все товары
+                                <i class="fas fa-arrow-right ml-1 text-xs group-hover:translate-x-1 transition-transform"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Empty State -->
+    {% if not level2_categories and not level3_categories %}
+        <div class="empty-state">
+            <i class="fas fa-folder-open text-4xl lg:text-6xl mb-4 lg:mb-6 text-gray-300"></i>
+            <p class="text-base lg:text-lg mb-2">В этой категории пока нет подкатегорий</p>
+            <p class="text-sm text-gray-400">Скоро здесь появятся новые товары</p>
+        </div>
+    {% endif %}
+    
+    <!-- Featured Categories Section -->
+    {% if featured_categories %}
+        <div class="featured-products-section mt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-star text-yellow-500 mr-2"></i>
+                Рекомендуемые категории
+            </h3>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {% for featured_cat in featured_categories %}
+                    <a href="/category/{{ featured_cat.slug }}/" 
+                       class="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all group">
+                        {% if featured_cat.mega_menu_image %}
+                            <img src="{{ featured_cat.mega_menu_image.url }}" 
+                                 alt="{{ featured_cat.name }}" 
+                                 class="w-10 h-10 rounded object-cover mr-3">
+                        {% else %}
+                            <div class="w-10 h-10 category-image-placeholder rounded mr-3">
+                                <i class="fas fa-star text-yellow-500"></i>
+                            </div>
+                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-sm text-gray-900 truncate group-hover:text-blue-600">
+                                {{ featured_cat.name }}
+                            </p>
+                            <p class="text-xs text-gray-500">{{ featured_cat.products_count }} товаров</p>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Loading State Template -->
+<div class="mega-menu-loading hidden" id="megaMenuLoading">
+    <div class="space-y-4">
+        {% for i in "123456" %}
+            <div class="loading-skeleton h-16 rounded-lg"></div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Error State Template -->
+<div class="mega-menu-error hidden" id="megaMenuError">
+    <div class="error-state">
+        <i class="fas fa-exclamation-triangle text-4xl lg:text-6xl mb-4 lg:mb-6 text-red-300"></i>
+        <p class="text-base lg:text-lg mb-2">Ошибка загрузки категорий</p>
+        <p class="text-sm text-gray-400 mb-4">Попробуйте обновить страницу</p>
+        <button onclick="location.reload()" 
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            Попробовать снова
+        </button>
+    </div>
+</div>
