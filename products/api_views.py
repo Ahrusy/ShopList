@@ -41,11 +41,11 @@ def mega_menu_categories(request):
                         queryset=Category.objects.filter(
                             is_active=True,
                             show_in_megamenu=True
-                        ).order_by('sort_order', 'name')
+                        ).order_by('sort_order')
                     )
-                ).order_by('sort_order', 'name')
+                ).order_by('sort_order')
             )
-        ).order_by('sort_order', 'name')
+        ).order_by('sort_order')
         
         def serialize_category(category):
             """Сериализует категорию в словарь"""
@@ -138,9 +138,9 @@ def category_subcategories(request, category_id):
                 'children',
                 queryset=Category.objects.filter(
                     is_active=True
-                ).order_by('sort_order', 'name')
+                ).order_by('sort_order')
             )
-        ).order_by('sort_order', 'name')
+        ).order_by('sort_order')
         
         def serialize_subcategory(subcategory):
             """Сериализует подкатегорию"""

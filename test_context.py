@@ -27,7 +27,7 @@ def test_template_context():
     root_categories = Category.objects.filter(
         parent__isnull=True, 
         is_active=True
-    ).order_by('sort_order', 'name')
+    ).order_by('sort_order')
     
     print(f"📊 Корневых категорий в базе: {root_categories.count()}")
     
