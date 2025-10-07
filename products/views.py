@@ -76,7 +76,7 @@ def index(request):
     root_categories = Category.objects.filter(
         parent__isnull=True, 
         is_active=True
-    ).order_by('sort_order', 'name')
+    ).order_by('sort_order')
     
     # Если это страница категории, перенаправляем на правильный URL категории
     if not is_main_page and category_param:
@@ -234,9 +234,9 @@ def category_view(request, category_slug):
     elif sort_by == 'newest':
         products = products.order_by('-created_at')
     elif sort_by == 'name_asc':
-        products = products.order_by('name')
+        products = products.order_by('translations__name')
     elif sort_by == 'name_desc':
-        products = products.order_by('-name')
+        products = products.order_by('-translations__name')
     else:  # popularity
         products = products.order_by('-views_count', '-reviews_count', '-created_at')
     
@@ -253,7 +253,7 @@ def category_view(request, category_slug):
     subcategories = Category.objects.filter(
         parent=category, 
         is_active=True
-    ).order_by('sort_order', 'name')
+    ).order_by('sort_order')
     
     # Построение breadcrumbs
     breadcrumbs = []
@@ -301,7 +301,7 @@ def catalog_view(request):
     root_categories = Category.objects.filter(
         parent__isnull=True,
         is_active=True
-    ).prefetch_related('children__children').order_by('sort_order', 'name')
+    ).prefetch_related('children__children').order_by('sort_order')
     
     # Популярные категории (с наибольшим количеством товаров)
     popular_categories = Category.objects.filter(

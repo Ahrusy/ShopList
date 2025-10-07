@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 import uuid
-# from parler.models import TranslatableModel, TranslatedFields # Закомментировано
+from parler.models import TranslatableModel, TranslatedFields
 
 
 class ClientAccount(models.Model):
@@ -106,12 +106,12 @@ class MoodTracking(models.Model):
         return f"{self.get_mood_display()} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
 
-class Category(models.Model): # Изменено с TranslatableModel
+class Category(TranslatableModel):
     """Модель категории товаров"""
-    # translations = TranslatedFields( # Закомментировано
-    name=models.CharField(max_length=100, default="", verbose_name=_("Название"))
-    description=models.TextField(blank=True, verbose_name=_("Описание"))
-    # ) # Закомментировано
+    translations = TranslatedFields(
+        name=models.CharField(max_length=100, verbose_name=_("Название")),
+        description=models.TextField(blank=True, verbose_name=_("Описание"))
+    )
     slug = models.SlugField(max_length=100, unique=True, verbose_name=_("URL-адрес"))
     icon = models.CharField(max_length=50, blank=True, verbose_name=_("Иконка"))
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Родительская категория"))
@@ -133,7 +133,10 @@ class Category(models.Model): # Изменено с TranslatableModel
     featured_products = models.ManyToManyField('Product', blank=True, related_name='featured_in_categories', verbose_name=_("Рекомендуемые товары"))
 
     def __str__(self):
-        return self.name
+        try:
+            return self.name
+        except:
+            return f"Category {self.id} ({self.slug})"
 
     @property
     def level(self):
@@ -169,13 +172,13 @@ class Category(models.Model): # Изменено с TranslatableModel
     def get_level_2_children(self):
         """Возвращает подкатегории 2-го уровня"""
         if self.category_level == 0:  # Корневая категория
-            return self.children.filter(is_active=True, category_level=1).order_by('sort_order', 'name')
+            return self.children.filter(is_active=True, category_level=1).order_by('sort_order')
         return Category.objects.none()
     
     def get_level_3_children(self):
         """Возвращает подкатегории 3-го уровня"""
         if self.category_level == 1:  # Категория 2-го уровня
-            return self.children.filter(is_active=True, category_level=2).order_by('sort_order', 'name')
+            return self.children.filter(is_active=True, category_level=2).order_by('sort_order')
         return Category.objects.none()
     
     def ensure_subcategories(self):
@@ -219,7 +222,7 @@ class Category(models.Model): # Изменено с TranslatableModel
     class Meta:
         verbose_name = _("Категория")
         verbose_name_plural = _("Категории")
-        ordering = ['sort_order', 'slug']
+        ordering = ['sort_order', 'id']
         indexes = [
             models.Index(fields=['parent', 'is_active', 'category_level']),
             models.Index(fields=['category_level', 'sort_order']),
@@ -229,13 +232,13 @@ class Category(models.Model): # Изменено с TranslatableModel
         ]
 
 
-class Shop(models.Model): # Изменено с TranslatableModel
+class Shop(TranslatableModel):
     """Модель магазина"""
-    # translations = TranslatedFields( # Закомментировано
-    name=models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Название"))
-    address=models.TextField(blank=True, null=True, verbose_name=_("Адрес"))
-    city=models.CharField(max_length=100, blank=True, null=True, verbose_name=_("Город"))
-    # ) # Закомментировано
+    translations = TranslatedFields(
+        name=models.CharField(max_length=255, verbose_name=_("Название")),
+        address=models.TextField(verbose_name=_("Адрес")),
+        city=models.CharField(max_length=100, verbose_name=_("Город"))
+    )
     latitude = models.FloatField(blank=True, null=True, verbose_name=_("Широта"))
     longitude = models.FloatField(blank=True, null=True, verbose_name=_("Долгота"))
     phone = models.CharField(max_length=20, blank=True, verbose_name=_("Телефон"))
@@ -245,7 +248,10 @@ class Shop(models.Model): # Изменено с TranslatableModel
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
 
     def __str__(self):
-        return self.name
+        try:
+            return self.name
+        except:
+            return f"Shop {self.id}"
 
     class Meta:
         verbose_name = _("Магазин")
@@ -253,16 +259,19 @@ class Shop(models.Model): # Изменено с TranslatableModel
         ordering = ['phone']
 
 
-class Tag(models.Model): # Изменено с TranslatableModel
+class Tag(TranslatableModel):
     """Модель тега"""
-    # translations = TranslatedFields( # Закомментировано
-    name=models.CharField(max_length=50, unique=True, default="", verbose_name=_("Название"))
-    # ) # Закомментировано
+    translations = TranslatedFields(
+        name=models.CharField(max_length=50, verbose_name=_("Название"))
+    )
     color = models.CharField(max_length=7, default='#007bff', verbose_name=_("Цвет"))
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата создания"))
 
     def __str__(self):
-        return self.name
+        try:
+            return self.name
+        except:
+            return f"Tag {self.id}"
 
     class Meta:
         verbose_name = _("Тег")
@@ -292,12 +301,12 @@ class Seller(models.Model):
         ordering = ['-created_at']
 
 
-class Product(models.Model): # Изменено с TranslatableModel
+class Product(TranslatableModel):
     """Модель товара"""
-    # translations = TranslatedFields( # Закомментировано
-    name=models.CharField(max_length=255, default="", verbose_name=_("Название"))
-    description=models.TextField(default="", verbose_name=_("Описание"))
-    # ) # Закомментировано
+    translations = TranslatedFields(
+        name=models.CharField(max_length=255, verbose_name=_("Название")),
+        description=models.TextField(blank=True, verbose_name=_("Описание"))
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Цена"))
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name=_("Цена со скидкой"))
     currency = models.CharField(max_length=3, default='RUB', verbose_name=_("Валюта"))
@@ -317,7 +326,10 @@ class Product(models.Model): # Изменено с TranslatableModel
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
 
     def __str__(self):
-        return self.name
+        try:
+            return self.name
+        except:
+            return f"Product {self.id} ({self.sku})"
 
     @property
     def final_price(self):
@@ -439,7 +451,7 @@ class ProductCharacteristic(models.Model):
     class Meta:
         verbose_name = _("Характеристика товара")
         verbose_name_plural = _("Характеристики товаров")
-        ordering = ['order', 'name']
+        ordering = ['order']
 
 
 class Order(models.Model):
@@ -752,7 +764,7 @@ class Location(models.Model):
     class Meta:
         verbose_name = _("Локация")
         verbose_name_plural = _("Локации")
-        ordering = ['name']
+        ordering = ['id']
 
 
 class UserLocation(models.Model):
@@ -786,7 +798,7 @@ class PageCategory(models.Model):
     class Meta:
         verbose_name = _("Категория страниц")
         verbose_name_plural = _("Категории страниц")
-        ordering = ['sort_order', 'name']
+        ordering = ['sort_order']
 
 
 class Page(models.Model):

@@ -1,0 +1,29 @@
+Заказ создан - ShopList
+
+Здравствуйте, {{ user.first_name|default:user.username }}!
+
+Ваш заказ №{{ order.order_number }} успешно создан и принят в обработку.
+
+Детали заказа:
+- Номер заказа: {{ order.order_number }}
+- Дата создания: {{ order.created_at|date:"d.m.Y H:i" }}
+- Статус: {{ order.get_status_display }}
+- Адрес доставки: {{ order.shipping_address }}
+
+Товары в заказе:
+{% for item in order.items.all %}
+- {{ item.product.name }} × {{ item.quantity }} = {{ item.total_price }} ₽
+{% endfor %}
+
+{% if order.shipping_cost > 0 %}Доставка: {{ order.shipping_cost }} ₽{% endif %}
+{% if order.discount_amount > 0 %}Скидка: -{{ order.discount_amount }} ₽{% endif %}
+
+Итого: {{ order.total_amount }} ₽
+
+Мы свяжемся с вами в ближайшее время для подтверждения заказа.
+
+Посмотреть заказ: {{ site_url }}/orders/{{ order.id }}/
+
+С уважением,
+Команда ShopList
+{{ site_url }}

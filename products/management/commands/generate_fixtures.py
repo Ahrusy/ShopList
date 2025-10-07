@@ -1,191 +1,251 @@
-import os
-import random
+"""
+Команда для генерации тестовых данных
+"""
+
 from django.core.management.base import BaseCommand
+from django.contrib.auth import get_user_model
+from products.models import Category, Shop, Tag, Product, ProductImage, Seller
+from faker import Faker
+import random
+import requests
+from io import BytesIO
 from django.core.files import File
 from django.conf import settings
-from faker import Faker
-from factory import fuzzy
-from factory.django import DjangoModelFactory
-from parler.utils.context import switch_language
-from products.models import Category, Shop, Product, ProductImage, Tag, User
-import requests
-import json
-import environ
 
-# Initialize environment variables
-env = environ.Env()
-environ.Env.read_env(os.path.join(settings.BASE_DIR, '.env'))
+User = get_user_model()
+fake = Faker('ru_RU')
 
-UNSPLASH_ACCESS_KEY = env('UNSPLASH_ACCESS_KEY')
-
-class CategoryFactory(DjangoModelFactory):
-    class Meta:
-        model = Category
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        obj = model_class()
-        for lang_code, _ in settings.LANGUAGES:
-            with switch_language(obj, lang_code):
-                obj.name = Faker(lang_code).word().capitalize()
-                obj.slug = Faker(lang_code).slug()
-        obj.save()
-        return obj
-
-class ShopFactory(DjangoModelFactory):
-    class Meta:
-        model = Shop
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        obj = model_class()
-        for lang_code, _ in settings.LANGUAGES:
-            with switch_language(obj, lang_code):
-                obj.name = Faker(lang_code).company()
-                obj.address = Faker(lang_code).address()
-                obj.city = Faker(lang_code).city()
-        obj.latitude = fuzzy.FuzzyFloat(-90, 90).evaluate(2, None, False)
-        obj.longitude = fuzzy.FuzzyFloat(-180, 180).evaluate(2, None, False)
-        obj.save()
-        return obj
-
-class TagFactory(DjangoModelFactory):
-    class Meta:
-        model = Tag
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        obj = model_class()
-        for lang_code, _ in settings.LANGUAGES:
-            with switch_language(obj, lang_code):
-                obj.name = Faker(lang_code).word()
-        obj.save()
-        return obj
-
-class ProductFactory(DjangoModelFactory):
-    class Meta:
-        model = Product
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        obj = model_class()
-        for lang_code, _ in settings.LANGUAGES:
-            with switch_language(obj, lang_code):
-                obj.name = Faker(lang_code).sentence(nb_words=3).replace('.', '').capitalize()
-                obj.description = Faker(lang_code).paragraph(nb_sentences=3)
-        obj.price = fuzzy.FuzzyDecimal(100, 100000, decimal_places=2).evaluate(2, None, False)
-        obj.discount_price = fuzzy.FuzzyDecimal(10, obj.price - 1, decimal_places=2).evaluate(2, None, False) if random.random() > 0.5 else None
-        obj.currency = random.choice(['RUB', 'USD', 'EUR'])
-        obj.category = random.choice(Category.objects.all())
-        obj.save() # Save product first to get an ID for ManyToMany
-        obj.shops.set(random.sample(list(Shop.objects.all()), random.randint(1, 3)))
-        obj.tags.set(random.sample(list(Tag.objects.all()), random.randint(1, 5)))
-        obj.save()
-        return obj
-
-def download_image(url, filename):
-    try:
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        path = os.path.join(settings.MEDIA_ROOT, 'products', filename)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        return path
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading image {url}: {e}")
-        return None
-
-def get_unsplash_image_url(query):
-    if not UNSPLASH_ACCESS_KEY:
-        print("UNSPLASH_ACCESS_KEY not set in .env. Skipping image download.")
-        return None
-    url = f"https://api.unsplash.com/photos/random?query={query}&client_id={UNSPLASH_ACCESS_KEY}"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        return data['urls']['regular']
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching image from Unsplash for query '{query}': {e}")
-        return None
-    except KeyError:
-        print(f"No image found for query '{query}' on Unsplash.")
-        return None
 
 class Command(BaseCommand):
-    help = 'Generates initial data for categories, shops, tags, products, and product images.'
+    help = 'Генерирует тестовые данные для ShopList'
 
     def add_arguments(self, parser):
-        parser.add_argument('--categories', type=int, default=5, help='Number of categories to create.')
-        parser.add_argument('--shops', type=int, default=10, help='Number of shops to create.')
-        parser.add_argument('--tags', type=int, default=15, help='Number of tags to create.')
-        parser.add_argument('--products', type=int, default=50, help='Number of products to create.')
-        parser.add_argument('--output', type=str, default='fixtures/initial_data.json', help='Output fixture file path.')
+        parser.add_argument('--categories', type=int, default=5, help='Количество категорий')
+        parser.add_argument('--shops', type=int, default=10, help='Количество магазинов')
+        parser.add_argument('--tags', type=int, default=15, help='Количество тегов')
+        parser.add_argument('--products', type=int, default=50, help='Количество товаров')
+        parser.add_argument('--users', type=int, default=20, help='Количество пользователей')
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Generating initial data...'))
+        self.stdout.write('Начинаем генерацию тестовых данных...')
+        
+        # Создаем пользователей
+        self.create_users(options['users'])
+        
+        # Создаем категории
+        categories = self.create_categories(options['categories'])
+        
+        # Создаем магазины
+        shops = self.create_shops(options['shops'])
+        
+        # Создаем теги
+        tags = self.create_tags(options['tags'])
+        
+        # Создаем продавцов
+        sellers = self.create_sellers()
+        
+        # Создаем товары
+        self.create_products(options['products'], categories, shops, tags, sellers)
+        
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Успешно создано:\n'
+                f'- Пользователей: {options["users"]}\n'
+                f'- Категорий: {options["categories"]}\n'
+                f'- Магазинов: {options["shops"]}\n'
+                f'- Тегов: {options["tags"]}\n'
+                f'- Товаров: {options["products"]}'
+            )
+        )
 
-        num_categories = options['categories']
-        num_shops = options['shops']
-        num_tags = options['tags']
-        num_products = options['products']
-        output_file = options['output']
+    def create_users(self, count):
+        """Создает тестовых пользователей"""
+        self.stdout.write('Создаем пользователей...')
+        
+        # Создаем админа если его нет
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser(
+                username='admin',
+                email='admin@shoplist.com',
+                password='admin123',
+                role='admin'
+            )
+            self.stdout.write('Создан администратор: admin/admin123')
+        
+        for i in range(count):
+            username = fake.user_name() + str(i)
+            email = fake.email()
+            
+            if not User.objects.filter(username=username).exists():
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password='password123',
+                    first_name=fake.first_name(),
+                    last_name=fake.last_name(),
+                    role=random.choice(['user', 'manager', 'seller'])
+                )
 
-        # Clear existing data (optional, for fresh generation)
-        ProductImage.objects.all().delete()
-        Product.objects.all().delete()
-        Category.objects.all().delete()
-        Shop.objects.all().delete()
-        Tag.objects.all().delete()
-        User.objects.filter(is_superuser=False).delete() # Clear non-superuser users
+    def create_categories(self, count):
+        """Создает категории товаров"""
+        self.stdout.write('Создаем категории...')
+        
+        category_names = [
+            'Электроника', 'Одежда', 'Дом и сад', 'Спорт и отдых', 'Красота и здоровье',
+            'Автотовары', 'Детские товары', 'Книги', 'Продукты питания', 'Мебель'
+        ]
+        
+        categories = []
+        for i in range(min(count, len(category_names))):
+            name = category_names[i]
+            slug = name.lower().replace(' ', '-').replace('ё', 'е')
+            
+            category, created = Category.objects.get_or_create(
+                slug=slug,
+                defaults={
+                    'name': name,
+                    'description': fake.text(max_nb_chars=200),
+                    'is_active': True,
+                    'sort_order': i
+                }
+            )
+            categories.append(category)
+            
+        return categories
 
-        self.stdout.write(self.style.SUCCESS(f'Creating {num_categories} categories...'))
-        categories = [CategoryFactory() for _ in range(num_categories)]
+    def create_shops(self, count):
+        """Создает магазины"""
+        self.stdout.write('Создаем магазины...')
+        
+        cities = ['Москва', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург', 'Казань']
+        shops = []
+        
+        for i in range(count):
+            city = random.choice(cities)
+            name = f"{fake.company()} ({city})"
+            
+            shop, created = Shop.objects.get_or_create(
+                name=name,
+                defaults={
+                    'address': fake.address(),
+                    'city': city,
+                    'phone': fake.phone_number(),
+                    'email': fake.email(),
+                    'latitude': fake.latitude(),
+                    'longitude': fake.longitude(),
+                    'is_active': True
+                }
+            )
+            shops.append(shop)
+            
+        return shops
 
-        self.stdout.write(self.style.SUCCESS(f'Creating {num_shops} shops...'))
-        shops = [ShopFactory() for _ in range(num_shops)]
+    def create_tags(self, count):
+        """Создает теги"""
+        self.stdout.write('Создаем теги...')
+        
+        tag_names = [
+            'Новинка', 'Хит продаж', 'Скидка', 'Премиум', 'Эко', 'Быстрая доставка',
+            'Гарантия', 'Популярное', 'Рекомендуем', 'Лимитированная серия',
+            'Бестселлер', 'Акция', 'Выгодно', 'Качество', 'Надежность'
+        ]
+        
+        colors = ['#ff6b35', '#005bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1']
+        tags = []
+        
+        for i in range(min(count, len(tag_names))):
+            name = tag_names[i]
+            
+            tag, created = Tag.objects.get_or_create(
+                name=name,
+                defaults={
+                    'color': random.choice(colors)
+                }
+            )
+            tags.append(tag)
+            
+        return tags
 
-        self.stdout.write(self.style.SUCCESS(f'Creating {num_tags} tags...'))
-        tags = [TagFactory() for _ in range(num_tags)]
+    def create_sellers(self):
+        """Создает продавцов"""
+        self.stdout.write('Создаем продавцов...')
+        
+        seller_users = User.objects.filter(role='seller')
+        sellers = []
+        
+        for user in seller_users:
+            seller, created = Seller.objects.get_or_create(
+                user=user,
+                defaults={
+                    'company_name': fake.company(),
+                    'description': fake.text(max_nb_chars=300),
+                    'commission_rate': random.uniform(3.0, 10.0),
+                    'is_verified': random.choice([True, False]),
+                    'rating': random.uniform(3.5, 5.0)
+                }
+            )
+            sellers.append(seller)
+            
+        return sellers
 
-        self.stdout.write(self.style.SUCCESS(f'Creating {num_products} products and images...'))
-        products_data = []
-        for i in range(num_products):
-            product = ProductFactory()
-            products_data.append(product)
+    def create_products(self, count, categories, shops, tags, sellers):
+        """Создает товары"""
+        self.stdout.write('Создаем товары...')
+        
+        product_names = [
+            'Смартфон', 'Ноутбук', 'Наушники', 'Планшет', 'Умные часы',
+            'Футболка', 'Джинсы', 'Кроссовки', 'Куртка', 'Рюкзак',
+            'Кофеварка', 'Пылесос', 'Микроволновка', 'Утюг', 'Фен',
+            'Книга', 'Игрушка', 'Мяч', 'Велосипед', 'Палатка'
+        ]
+        
+        for i in range(count):
+            base_name = random.choice(product_names)
+            brand = fake.company()
+            name = f"{brand} {base_name} {fake.word().title()}"
+            
+            price = random.uniform(500, 50000)
+            discount_price = None
+            if random.choice([True, False]):
+                discount_price = price * random.uniform(0.7, 0.95)
+            
+            product = Product.objects.create(
+                name=name,
+                description=fake.text(max_nb_chars=500),
+                price=price,
+                discount_price=discount_price,
+                category=random.choice(categories),
+                seller=random.choice(sellers) if sellers else None,
+                sku=f"PRD-{fake.random_number(digits=8)}",
+                brand=brand,
+                stock_quantity=random.randint(0, 100),
+                is_active=True,
+                rating=random.uniform(3.0, 5.0),
+                reviews_count=random.randint(0, 500),
+                views_count=random.randint(0, 1000)
+            )
+            
+            # Добавляем магазины
+            product.shops.set(random.sample(shops, random.randint(1, min(3, len(shops)))))
+            
+            # Добавляем теги
+            product.tags.set(random.sample(tags, random.randint(0, min(3, len(tags)))))
+            
+            # Создаем изображения (заглушки)
+            for j in range(random.randint(1, 3)):
+                ProductImage.objects.create(
+                    product=product,
+                    alt_text=f"{product.name} - изображение {j+1}",
+                    is_primary=(j == 0),
+                    order=j
+                )
 
-            # Download 1-3 images for each product
-            num_images = random.randint(1, 3)
-            for j in range(num_images):
-                image_query = f"{product.name} {product.category.name}"
-                image_url = get_unsplash_image_url(image_query)
-                if image_url:
-                    filename = f"{product.slug}_{j}.webp" # Use webp format
-                    local_path = download_image(image_url, filename)
-                    if local_path:
-                        with open(local_path, 'rb') as f:
-                            image_file = File(f)
-                            ProductImage.objects.create(
-                                product=product,
-                                image=image_file,
-                                alt_text=f"{product.name} image {j+1}",
-                                order=j
-                            )
-                        self.stdout.write(self.style.SUCCESS(f'  Downloaded image for {product.name}: {filename}'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'  Failed to download image for {product.name}'))
-                else:
-                    self.stdout.write(self.style.WARNING(f'  No image URL found for {product.name}'))
-
-        self.stdout.write(self.style.SUCCESS('Data generation complete.'))
-
-        # Optional: Dump data to a JSON fixture
-        # This part is commented out as the models are already created in the DB.
-        # If you need a JSON fixture, you can uncomment and adjust.
-        # from django.core import serializers
-        # all_data = list(Category.objects.all()) + list(Shop.objects.all()) + list(Tag.objects.all()) + list(Product.objects.all()) + list(ProductImage.objects.all())
-        # with open(output_file, 'w', encoding='utf-8') as f:
-        #     json.dump(json.loads(serializers.serialize('json', all_data, indent=4, use_natural_foreign_keys=True, use_natural_primary_keys=True)), f, indent=4, ensure_ascii=False)
-        # self.stdout.write(self.style.SUCCESS(f'Data dumped to {output_file}'))
+    def download_image(self, url):
+        """Скачивает изображение по URL"""
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                return BytesIO(response.content)
+        except:
+            pass
+        return None

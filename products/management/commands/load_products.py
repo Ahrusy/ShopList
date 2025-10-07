@@ -137,13 +137,13 @@ class Command(BaseCommand):
             return Category.objects.filter(
                 category_level=level,
                 is_active=True
-            ).order_by('name')
+            ).order_by('sort_order')
         
         elif options['level'] is not None:
             return Category.objects.filter(
                 category_level=options['level'],
                 is_active=True
-            ).order_by('name')
+            ).order_by('sort_order')
         
         else:
             raise CommandError(

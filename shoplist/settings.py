@@ -76,15 +76,18 @@ INSTALLED_APPS = [
     'parler', # Для мультиязычности
     'crispy_forms', # Для форм
     'crispy_bootstrap5', # Bootstrap 5 для crispy forms
-    # 'django_admin_interface', # Улучшенный админ интерфейс - отключено
-    'colorfield', # Поля для выбора цвета
-    # 'django_two_factor_auth', # Двухфакторная аутентификация - отключено
-    # 'django_ratelimit', # Ограничение скорости запросов
-    # 'notifications', # Уведомления - отключено
-    # 'drf_spectacular', # Swagger документация - отключено
-    # 'djangorestframework_simplejwt', # JWT токены - отключено
-    # 'django_redis', # Redis кэш - отключено
-    # 'celery', # Асинхронные задачи - отключено
+    # 'django_admin_interface', # Улучшенный админ интерфейс - временно отключен
+    # 'colorfield', # Поля для выбора цвета - временно отключен
+    # 'django_otp', # Двухфакторная аутентификация - временно отключен
+    # 'django_otp.plugins.otp_totp',
+    # 'django_otp.plugins.otp_static',
+    # 'two_factor', # Django Two-Factor Auth - временно отключен
+    # 'django_ratelimit', # Ограничение скорости запросов - временно отключен
+    # 'notifications', # Уведомления - временно отключен
+    'drf_spectacular', # Swagger документация
+    'rest_framework_simplejwt', # JWT токены
+    # 'django_redis', # Redis кэш - временно отключен
+    # 'django_notifications', # Django notifications - временно отключен
     
     # Allauth apps for social authentication
     'allauth',
@@ -110,9 +113,9 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'products.middleware.ClientSessionMiddleware', # Клиентская сессия отдельно от Django user
-    # 'django_otp.middleware.OTPMiddleware', # Для 2FA - временно отключено
-    'products.middleware.LocationMiddleware', # Для обработки локации пользователя
-    # 'products.rate_limit_middleware.RateLimitMiddleware', # Для обработки rate limiting
+    # 'django_otp.middleware.OTPMiddleware', # Для 2FA - временно отключен
+    # 'products.middleware.LocationMiddleware', # Для обработки локации пользователя - временно отключен
+    # 'products.rate_limit_middleware.RateLimitMiddleware', # Для обработки rate limiting - временно отключен
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',  # Required by allauth
@@ -245,6 +248,26 @@ if CLOUDINARY_URL:
 # Redis settings for caching and Celery
 REDIS_URL = env('REDIS_URL')
 
+# Cache configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'shoplist',
+        'TIMEOUT': 300,  # 5 minutes default timeout
+    }
+}
+
+# Session engine (use Redis for sessions)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+# Cache time settings
+CACHE_TTL = 60 * 15  # 15 minutes
+
 # For development, use local memory cache instead of Redis
 # CACHES = {
 #     'default': {
@@ -311,7 +334,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
-    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 12,
@@ -423,3 +446,145 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
 EMAIL_USE_SSL = env('EMAIL_USE_SSL', default=False)
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='webmaster@mail.ru')
+
+# Two-Factor Authentication settings
+TWO_FACTOR_PATCH_ADMIN = True
+TWO_FACTOR_CALL_GATEWAY = None
+TWO_FACTOR_SMS_GATEWAY = None
+
+# Django OTP settings
+OTP_TOTP_ISSUER = 'ShopList'
+OTP_LOGIN_URL = '/auth/login/'
+
+# Notifications settings
+DJANGO_NOTIFICATIONS_CONFIG = {
+    'USE_JSONFIELD': True,
+}
+
+# Site settings
+SITE_NAME = 'ShopList'
+SITE_URL = env('SITE_URL', default='http://localhost:8000')
+
+# Analytics settings
+GOOGLE_ANALYTICS_ID = env('GOOGLE_ANALYTICS_ID', default='')
+
+# Rate limiting settings
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'
+
+# JWT settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
+
+# DRF Spectacular settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'ShopList API',
+    'DESCRIPTION': 'API для интернет-магазина ShopList',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/v1/',
+}
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'products': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
+# Create logs directory if it doesn't exist
+import os
+logs_dir = BASE_DIR / 'logs'
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
+
+# Celery Configuration
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Celery Beat Schedule (для периодических задач)
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-old-notifications': {
+        'task': 'products.tasks.cleanup_old_notifications',
+        'schedule': 86400.0,  # Каждый день
+    },
+    'update-product-ratings': {
+        'task': 'products.tasks.update_product_ratings',
+        'schedule': 3600.0,  # Каждый час
+    },
+    'generate-analytics-report': {
+        'task': 'products.tasks.generate_analytics_report',
+        'schedule': 604800.0,  # Каждую неделю
+    },
+    'backup-database': {
+        'task': 'products.tasks.backup_database',
+        'schedule': 86400.0,  # Каждый день
+    },
+}

@@ -1,0 +1,78 @@
+{% extends 'emails/base.html' %}
+
+{% block title %}Заказ создан - ShopList{% endblock %}
+
+{% block content %}
+<h2>Заказ успешно создан!</h2>
+
+<div class="success">
+    <strong>Поздравляем!</strong> Ваш заказ №{{ order.order_number }} успешно создан и принят в обработку.
+</div>
+
+<p>Здравствуйте, {{ user.first_name|default:user.username }}!</p>
+
+<p>Спасибо за ваш заказ в ShopList. Мы получили ваш заказ и начинаем его обработку.</p>
+
+<div class="order-details">
+    <h3>Детали заказа</h3>
+    <div class="order-item">
+        <span><strong>Номер заказа:</strong></span>
+        <span>{{ order.order_number }}</span>
+    </div>
+    <div class="order-item">
+        <span><strong>Дата создания:</strong></span>
+        <span>{{ order.created_at|date:"d.m.Y H:i" }}</span>
+    </div>
+    <div class="order-item">
+        <span><strong>Статус:</strong></span>
+        <span>{{ order.get_status_display }}</span>
+    </div>
+    <div class="order-item">
+        <span><strong>Адрес доставки:</strong></span>
+        <span>{{ order.shipping_address }}</span>
+    </div>
+</div>
+
+<div class="order-details">
+    <h3>Товары в заказе</h3>
+    {% for item in order.items.all %}
+    <div class="order-item">
+        <span>{{ item.product.name }} × {{ item.quantity }}</span>
+        <span>{{ item.total_price }} ₽</span>
+    </div>
+    {% endfor %}
+    
+    {% if order.shipping_cost > 0 %}
+    <div class="order-item">
+        <span>Доставка:</span>
+        <span>{{ order.shipping_cost }} ₽</span>
+    </div>
+    {% endif %}
+    
+    {% if order.discount_amount > 0 %}
+    <div class="order-item">
+        <span>Скидка:</span>
+        <span style="color: #28a745;">-{{ order.discount_amount }} ₽</span>
+    </div>
+    {% endif %}
+    
+    <div class="order-item total">
+        <span>Итого:</span>
+        <span>{{ order.total_amount }} ₽</span>
+    </div>
+</div>
+
+<p>Мы свяжемся с вами в ближайшее время для подтверждения заказа.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ site_url }}/orders/{{ order.id }}/" class="button">Посмотреть заказ</a>
+</div>
+
+<div class="highlight">
+    <strong>Что дальше?</strong><br>
+    1. Мы проверим наличие товаров<br>
+    2. Свяжемся с вами для подтверждения<br>
+    3. Подготовим заказ к отправке<br>
+    4. Уведомим о статусе доставки
+</div>
+{% endblock %}

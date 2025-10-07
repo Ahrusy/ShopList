@@ -1,0 +1,379 @@
+<!-- Analytics Dashboard Component -->
+<div class="analytics-dashboard" id="analyticsDashboard">
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Products -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-box text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Всего товаров</p>
+                    <p class="text-2xl font-bold text-gray-900" id="totalProducts">{{ analytics.total_products|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Orders -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-shopping-cart text-green-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Всего заказов</p>
+                    <p class="text-2xl font-bold text-gray-900" id="totalOrders">{{ analytics.total_orders|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Revenue -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-ruble-sign text-yellow-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Общая выручка</p>
+                    <p class="text-2xl font-bold text-gray-900" id="totalRevenue">{{ analytics.total_revenue|default:0|floatformat:0 }} ₽</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Users -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users text-purple-600"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Активные пользователи</p>
+                    <p class="text-2xl font-bold text-gray-900" id="activeUsers">{{ analytics.active_users|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Sales Chart -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Продажи по дням</h3>
+                <div class="flex space-x-2">
+                    <button class="period-btn active" data-period="7">7 дней</button>
+                    <button class="period-btn" data-period="30">30 дней</button>
+                    <button class="period-btn" data-period="90">90 дней</button>
+                </div>
+            </div>
+            <div class="h-64">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Categories Chart -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Продажи по категориям</h3>
+            <div class="h-64">
+                <canvas id="categoriesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Additional Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Top Products -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Топ товары</h3>
+            <div class="space-y-4">
+                {% for product in analytics.top_products|slice:":5" %}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                            {% if product.images.first %}
+                                <img src="{{ product.images.first.get_thumbnail_url }}" alt="{{ product.name }}" class="w-8 h-8 object-cover rounded">
+                            {% else %}
+                                <i class="fas fa-image text-gray-400"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ product.name|truncatechars:30 }}</p>
+                            <p class="text-xs text-gray-500">{{ product.views_count }} просмотров</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold text-gray-900">{{ product.final_price }} ₽</p>
+                        <p class="text-xs text-green-600">{{ product.sales_count|default:0 }} продаж</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-4">Нет данных</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- User Activity -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Активность пользователей</h3>
+            <div class="h-64">
+                <canvas id="userActivityChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Последняя активность</h3>
+        <div class="space-y-4">
+            {% for activity in analytics.recent_activities|slice:":10" %}
+            <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                        {% if activity.type == 'order' %}
+                            <i class="fas fa-shopping-cart text-green-600 text-xs"></i>
+                        {% elif activity.type == 'product' %}
+                            <i class="fas fa-box text-blue-600 text-xs"></i>
+                        {% elif activity.type == 'user' %}
+                            <i class="fas fa-user text-purple-600 text-xs"></i>
+                        {% else %}
+                            <i class="fas fa-circle text-gray-400 text-xs"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm text-gray-900">{{ activity.description }}</p>
+                    <p class="text-xs text-gray-500">{{ activity.created_at|timesince }} назад</p>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-4">Нет активности</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Styles -->
+<style>
+.period-btn {
+    padding: 4px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    color: #6b7280;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.period-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.period-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.analytics-dashboard canvas {
+    max-height: 100%;
+}
+
+.chart-container {
+    position: relative;
+    height: 256px;
+}
+</style>
+
+<!-- Chart.js JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load Chart.js if not available
+    if (typeof Chart === 'undefined') {
+        loadChartJS().then(() => {
+            initializeCharts();
+        }).catch(() => {
+            console.error('Failed to load Chart.js');
+            showChartError();
+        });
+    } else {
+        initializeCharts();
+    }
+    
+    function loadChartJS() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    
+    function initializeCharts() {
+        // Sales Chart
+        const salesCtx = document.getElementById('salesChart');
+        if (salesCtx) {
+            const salesChart = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ analytics.sales_labels|safe|default:"[]" }},
+                    datasets: [{
+                        label: 'Продажи',
+                        data: {{ analytics.sales_data|safe|default:"[]" }},
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' ₽';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Period buttons
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const period = this.dataset.period;
+                    updateSalesChart(salesChart, period);
+                });
+            });
+        }
+        
+        // Categories Chart
+        const categoriesCtx = document.getElementById('categoriesChart');
+        if (categoriesCtx) {
+            new Chart(categoriesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: {{ analytics.categories_labels|safe|default:"[]" }},
+                    datasets: [{
+                        data: {{ analytics.categories_data|safe|default:"[]" }},
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#ef4444',
+                            '#10b981',
+                            '#f59e0b',
+                            '#8b5cf6',
+                            '#06b6d4',
+                            '#84cc16'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // User Activity Chart
+        const userActivityCtx = document.getElementById('userActivityChart');
+        if (userActivityCtx) {
+            new Chart(userActivityCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ analytics.activity_labels|safe|default:"[]" }},
+                    datasets: [{
+                        label: 'Активные пользователи',
+                        data: {{ analytics.activity_data|safe|default:"[]" }},
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    function updateSalesChart(chart, period) {
+        // Fetch new data for the selected period
+        fetch(`/api/analytics/sales/?period=${period}`)
+            .then(response => response.json())
+            .then(data => {
+                chart.data.labels = data.labels;
+                chart.data.datasets[0].data = data.data;
+                chart.update();
+            })
+            .catch(error => {
+                console.error('Error updating sales chart:', error);
+            });
+    }
+    
+    function showChartError() {
+        const chartContainers = document.querySelectorAll('canvas');
+        chartContainers.forEach(canvas => {
+            const container = canvas.parentElement;
+            container.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500"><i class="fas fa-chart-line mr-2"></i>Не удалось загрузить график</div>';
+        });
+    }
+    
+    // Auto-refresh data every 5 minutes
+    setInterval(() => {
+        refreshAnalyticsData();
+    }, 5 * 60 * 1000);
+    
+    function refreshAnalyticsData() {
+        fetch('/api/analytics/summary/')
+            .then(response => response.json())
+            .then(data => {
+                // Update summary cards
+                document.getElementById('totalProducts').textContent = data.total_products || 0;
+                document.getElementById('totalOrders').textContent = data.total_orders || 0;
+                document.getElementById('totalRevenue').textContent = (data.total_revenue || 0).toLocaleString() + ' ₽';
+                document.getElementById('activeUsers').textContent = data.active_users || 0;
+            })
+            .catch(error => {
+                console.error('Error refreshing analytics data:', error);
+            });
+    }
+});
+</script>

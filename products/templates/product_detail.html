@@ -1,5 +1,6 @@
 {% extends 'base_ozon.html' %}
 {% load static %}
+{% load json_extras %}
 
 {% block title %}{{ product.name }} - ShopList{% endblock %}
 
@@ -18,34 +19,9 @@
     </nav>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Product Images Section -->
+        <!-- Product Images Section with PhotoSwipe -->
         <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <!-- Main Image -->
-            <div class="mb-4">
-                {% if product.images.first %}
-                    <img id="mainImage" src="{{ product.images.first.image.url }}" 
-                         alt="{{ product.name }}" 
-                         class="w-full h-96 object-contain rounded-lg border border-gray-200">
-                {% else %}
-                    <div class="w-full h-96 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200">
-                        <i class="fas fa-image text-gray-400 text-6xl"></i>
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- Thumbnail Images -->
-            {% if product.images.count > 1 %}
-            <div class="grid grid-cols-5 sm:grid-cols-6 gap-2">
-                {% for image in product.images.all %}
-                <div class="cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-lg overflow-hidden bg-gray-50 ring-0 hover:ring-2 hover:ring-blue-500 transition-all {% if forloop.first %}border-blue-500{% endif %}"
-                     onclick="changeMainImage('{{ image.image.url }}', this)">
-                    <img src="{{ image.image.url }}" 
-                         alt="{{ product.name }}" 
-                         class="w-full h-20 object-cover">
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
+            {% include 'components/product_gallery.html' %}
         </div>
 
         <!-- Product Info Section -->
@@ -110,15 +86,11 @@
                 {% endif %}
             </div>
 
-            <!-- Shop Addresses -->
+            <!-- Shop Addresses with Map -->
             {% if product.shops.all %}
             <div class="mb-6">
-                <h3 class="font-semibold text-gray-900 mb-2">Доступно в магазинах:</h3>
-                <ul class="list-disc list-inside text-gray-700 space-y-1">
-                    {% for shop in product.shops.all %}
-                        <li>{{ shop.name }} - {{ shop.address }}</li>
-                    {% endfor %}
-                </ul>
+                <h3 class="font-semibold text-gray-900 mb-4">Доступно в магазинах:</h3>
+                {% include 'components/shop_map.html' with shops=product.shops.all shops_json=product.shops.all|shops_to_json %}
             </div>
             {% endif %}
 

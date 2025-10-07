@@ -1,0 +1,225 @@
+<!-- Shop Map Component -->
+<div class="shop-map-container" id="shopMap" data-shops="{{ shops_json|safe }}">
+    <!-- Map Container -->
+    <div id="map" class="w-full h-96 rounded-lg border border-gray-200 mb-4"></div>
+    
+    <!-- Shop List -->
+    <div class="shops-list space-y-3">
+        {% for shop in shops %}
+        <div class="shop-item p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer" 
+             data-shop-id="{{ shop.id }}" 
+             data-lat="{{ shop.latitude }}" 
+             data-lng="{{ shop.longitude }}">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900">{{ shop.name }}</h4>
+                    <p class="text-sm text-gray-600 mt-1">{{ shop.address }}</p>
+                    <p class="text-sm text-gray-500">{{ shop.city }}</p>
+                    {% if shop.phone %}
+                    <p class="text-sm text-blue-600 mt-2">
+                        <i class="fas fa-phone mr-1"></i>{{ shop.phone }}
+                    </p>
+                    {% endif %}
+                </div>
+                <button class="show-on-map-btn text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        data-shop-id="{{ shop.id }}">
+                    <i class="fas fa-map-marker-alt mr-1"></i>На карте
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Map Styles -->
+<style>
+.shop-map-container {
+    position: relative;
+}
+
+.shop-item.active {
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+}
+
+.leaflet-popup-content {
+    font-family: inherit;
+}
+
+.leaflet-popup-content h4 {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.leaflet-popup-content p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.leaflet-popup-content .phone {
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+/* Custom marker styles */
+.custom-marker {
+    background-color: #3b82f6;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.custom-marker.active {
+    background-color: #ef4444;
+    transform: scale(1.2);
+}
+</style>
+
+<!-- Map JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mapContainer = document.getElementById('map');
+    const shopsData = JSON.parse(document.getElementById('shopMap').dataset.shops || '[]');
+    
+    if (!mapContainer || shopsData.length === 0) {
+        console.log('No map container or shops data');
+        return;
+    }
+    
+    // Initialize map
+    let map;
+    let markers = [];
+    
+    // Try to use Leaflet (OpenStreetMap) first
+    if (typeof L !== 'undefined') {
+        initLeafletMap();
+    } else {
+        // Fallback to loading Leaflet
+        loadLeaflet().then(() => {
+            initLeafletMap();
+        }).catch(() => {
+            // If Leaflet fails, show simple list
+            showSimpleList();
+        });
+    }
+    
+    function loadLeaflet() {
+        return new Promise((resolve, reject) => {
+            // Load Leaflet CSS
+            const cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(cssLink);
+            
+            // Load Leaflet JS
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    
+    function initLeafletMap() {
+        // Calculate center point
+        const centerLat = shopsData.reduce((sum, shop) => sum + (shop.latitude || 0), 0) / shopsData.length;
+        const centerLng = shopsData.reduce((sum, shop) => sum + (shop.longitude || 0), 0) / shopsData.length;
+        
+        // Initialize map
+        map = L.map('map').setView([centerLat || 55.7558, centerLng || 37.6173], 10);
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Add markers
+        shopsData.forEach(shop => {
+            if (shop.latitude && shop.longitude) {
+                const marker = L.marker([shop.latitude, shop.longitude])
+                    .addTo(map)
+                    .bindPopup(`
+                        <div class="shop-popup">
+                            <h4>${shop.name}</h4>
+                            <p>${shop.address}</p>
+                            <p>${shop.city}</p>
+                            ${shop.phone ? `<p class="phone"><i class="fas fa-phone"></i> ${shop.phone}</p>` : ''}
+                        </div>
+                    `);
+                
+                markers.push({ marker, shopId: shop.id });
+            }
+        });
+        
+        // Fit map to markers
+        if (markers.length > 0) {
+            const group = new L.featureGroup(markers.map(m => m.marker));
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+        
+        // Add event listeners
+        addEventListeners();
+    }
+    
+    function addEventListeners() {
+        // Shop item click
+        document.querySelectorAll('.shop-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const shopId = parseInt(this.dataset.shopId);
+                highlightShop(shopId);
+            });
+        });
+        
+        // Show on map button click
+        document.querySelectorAll('.show-on-map-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const shopId = parseInt(this.dataset.shopId);
+                showShopOnMap(shopId);
+            });
+        });
+    }
+    
+    function highlightShop(shopId) {
+        // Remove active class from all items
+        document.querySelectorAll('.shop-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Add active class to clicked item
+        const activeItem = document.querySelector(`[data-shop-id="${shopId}"]`);
+        if (activeItem) {
+            activeItem.classList.add('active');
+        }
+        
+        // Highlight marker on map
+        if (map) {
+            const markerData = markers.find(m => m.shopId === shopId);
+            if (markerData) {
+                map.setView(markerData.marker.getLatLng(), 15);
+                markerData.marker.openPopup();
+            }
+        }
+    }
+    
+    function showShopOnMap(shopId) {
+        highlightShop(shopId);
+        
+        // Scroll to map
+        mapContainer.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+        });
+    }
+    
+    function showSimpleList() {
+        // Hide map container and show only list
+        mapContainer.style.display = 'none';
+        console.log('Map library not available, showing simple list');
+    }
+});
+</script>

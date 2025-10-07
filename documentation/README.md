@@ -119,24 +119,38 @@ ShopList — масштабируемый e-commerce сайт с REST API, му�
    docker-compose exec web python manage.py createsuperuser
    ```
 
-### Альтернативная установка (без Docker):
+### Быстрая установка (без Docker):
 
-1. **Установите зависимости:**
+1. **Создайте виртуальное окружение:**
+   ```bash
+   python -m venv .venv
+   ```
+
+2. **Активируйте виртуальное окружение:**
+   ```bash
+   # Windows
+   .venv\Scripts\activate
+   
+   # Linux/Mac
+   source .venv/bin/activate
+   ```
+
+3. **Установите зависимости:**
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Примените миграции:**
+4. **Примените миграции:**
    ```bash
    python manage.py migrate
    ```
 
-3. **Создайте суперпользователя:**
+5. **Создайте суперпользователя:**
    ```bash
-   python manage.py createsuperuser --username admin --email admin@example.com
+   python manage.py createsuperuser
    ```
 
-4. **Запустите сервер:**
+6. **Запустите сервер:**
    ```bash
    python manage.py runserver
    ```

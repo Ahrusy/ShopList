@@ -1,0 +1,307 @@
+<!-- Product Gallery with PhotoSwipe -->
+<div class="product-gallery" id="productGallery">
+    <!-- Main Image -->
+    <div class="main-image-container mb-4">
+        <div class="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            {% if product.images.all %}
+                <img id="mainImage" 
+                     src="{{ product.images.first.image.url }}" 
+                     alt="{{ product.images.first.alt_text|default:product.name }}"
+                     class="w-full h-full object-cover cursor-zoom-in"
+                     data-pswp-width="{{ product.images.first.width|default:800 }}"
+                     data-pswp-height="{{ product.images.first.height|default:600 }}">
+            {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <i class="fas fa-image text-gray-400 text-6xl"></i>
+                </div>
+            {% endif %}
+            
+            <!-- Zoom Icon -->
+            {% if product.images.all %}
+            <div class="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                <i class="fas fa-search-plus text-sm"></i>
+            </div>
+            {% endif %}
+            
+            <!-- Discount Badge -->
+            {% if product.discount_price %}
+            <div class="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                -{{ product.discount_percentage|floatformat:0 }}%
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Thumbnail Images -->
+    {% if product.images.count > 1 %}
+    <div class="thumbnails-container">
+        <div class="flex space-x-2 overflow-x-auto pb-2">
+            {% for image in product.images.all %}
+            <div class="thumbnail-item flex-shrink-0">
+                <img src="{{ image.get_thumbnail_url }}" 
+                     alt="{{ image.alt_text|default:product.name }}"
+                     class="w-16 h-16 object-cover rounded-lg border-2 border-transparent cursor-pointer hover:border-blue-500 transition-colors {% if forloop.first %}border-blue-500{% endif %}"
+                     data-main-src="{{ image.image.url }}"
+                     data-pswp-width="{{ image.width|default:800 }}"
+                     data-pswp-height="{{ image.height|default:600 }}"
+                     data-index="{{ forloop.counter0 }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Hidden gallery for PhotoSwipe -->
+    <div class="pswp-gallery" id="pswpGallery" style="display: none;">
+        {% for image in product.images.all %}
+        <a href="{{ image.image.url }}" 
+           data-pswp-width="{{ image.width|default:800 }}" 
+           data-pswp-height="{{ image.height|default:600 }}"
+           data-cropped="true"
+           target="_blank">
+            <img src="{{ image.get_thumbnail_url }}" alt="{{ image.alt_text|default:product.name }}" />
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- PhotoSwipe Styles -->
+<style>
+.product-gallery {
+    position: relative;
+}
+
+.main-image-container {
+    position: relative;
+    group: hover;
+}
+
+.main-image-container:hover .absolute {
+    opacity: 1;
+}
+
+.thumbnail-item img.active {
+    border-color: #3b82f6;
+}
+
+.thumbnails-container {
+    position: relative;
+}
+
+.thumbnails-container::-webkit-scrollbar {
+    height: 4px;
+}
+
+.thumbnails-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+.thumbnails-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
+
+.thumbnails-container::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* PhotoSwipe custom styles */
+.pswp__caption__center {
+    text-align: center;
+    max-width: 400px;
+    margin: 0 auto;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.pswp__top-bar {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.pswp__bg {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+/* Loading animation */
+.image-loading {
+    position: relative;
+}
+
+.image-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<!-- PhotoSwipe JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mainImage = document.getElementById('mainImage');
+    const thumbnails = document.querySelectorAll('.thumbnail-item img');
+    const galleryElement = document.getElementById('pswpGallery');
+    
+    // Initialize thumbnail switching
+    thumbnails.forEach((thumb, index) => {
+        thumb.addEventListener('click', function() {
+            // Update main image
+            const newSrc = this.dataset.mainSrc;
+            const newWidth = this.dataset.pswpWidth;
+            const newHeight = this.dataset.pswpHeight;
+            
+            if (mainImage) {
+                mainImage.src = newSrc;
+                mainImage.dataset.pswpWidth = newWidth;
+                mainImage.dataset.pswpHeight = newHeight;
+            }
+            
+            // Update active thumbnail
+            thumbnails.forEach(t => t.classList.remove('active', 'border-blue-500'));
+            this.classList.add('active', 'border-blue-500');
+        });
+    });
+    
+    // Initialize PhotoSwipe
+    if (typeof PhotoSwipe !== 'undefined' && galleryElement) {
+        initPhotoSwipe();
+    } else {
+        // Load PhotoSwipe if not available
+        loadPhotoSwipe().then(() => {
+            initPhotoSwipe();
+        }).catch(() => {
+            // Fallback to simple image click
+            initSimpleImageClick();
+        });
+    }
+    
+    function loadPhotoSwipe() {
+        return new Promise((resolve, reject) => {
+            // Load PhotoSwipe CSS
+            const cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = 'https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/photoswipe.css';
+            document.head.appendChild(cssLink);
+            
+            // Load PhotoSwipe JS
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/photoswipe.umd.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    
+    function initPhotoSwipe() {
+        // Get all gallery images
+        const galleryImages = Array.from(galleryElement.querySelectorAll('a')).map(link => ({
+            src: link.href,
+            width: parseInt(link.dataset.pswpWidth) || 800,
+            height: parseInt(link.dataset.pswpHeight) || 600,
+            alt: link.querySelector('img')?.alt || ''
+        }));
+        
+        // Main image click handler
+        if (mainImage) {
+            mainImage.addEventListener('click', function() {
+                const currentIndex = getCurrentImageIndex();
+                openPhotoSwipe(galleryImages, currentIndex);
+            });
+        }
+        
+        // Thumbnail click handler for PhotoSwipe
+        thumbnails.forEach((thumb, index) => {
+            thumb.addEventListener('dblclick', function() {
+                openPhotoSwipe(galleryImages, index);
+            });
+        });
+    }
+    
+    function getCurrentImageIndex() {
+        const activeThumbnail = document.querySelector('.thumbnail-item img.active');
+        if (activeThumbnail) {
+            return parseInt(activeThumbnail.dataset.index) || 0;
+        }
+        return 0;
+    }
+    
+    function openPhotoSwipe(items, index = 0) {
+        const lightbox = new PhotoSwipe({
+            dataSource: items,
+            index: index,
+            bgOpacity: 0.9,
+            showHideAnimationType: 'zoom',
+            showAnimationDuration: 333,
+            hideAnimationDuration: 333,
+            closeOnVerticalDrag: true,
+            mouseMovePan: true,
+            loop: true,
+            zoom: true,
+            counter: true,
+            arrowKeys: true,
+            returnFocus: false
+        });
+        
+        lightbox.init();
+    }
+    
+    function initSimpleImageClick() {
+        // Simple fallback - open image in new tab
+        if (mainImage) {
+            mainImage.addEventListener('click', function() {
+                window.open(this.src, '_blank');
+            });
+        }
+        
+        thumbnails.forEach(thumb => {
+            thumb.addEventListener('dblclick', function() {
+                window.open(this.dataset.mainSrc, '_blank');
+            });
+        });
+    }
+    
+    // Lazy loading for images
+    function initLazyLoading() {
+        const images = document.querySelectorAll('img[data-src]');
+        
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('image-loading');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            });
+            
+            images.forEach(img => {
+                img.classList.add('image-loading');
+                imageObserver.observe(img);
+            });
+        } else {
+            // Fallback for older browsers
+            images.forEach(img => {
+                img.src = img.dataset.src;
+            });
+        }
+    }
+    
+    // Initialize lazy loading
+    initLazyLoading();
+});
+</script>

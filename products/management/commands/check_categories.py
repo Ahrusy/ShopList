@@ -23,7 +23,7 @@ class Command(BaseCommand):
         root_cats = Category.objects.filter(
             parent=None, 
             is_active=True
-        ).order_by('sort_order', 'name')[:10]
+        ).order_by('sort_order')[:10]
         
         for cat in root_cats:
             children_count = cat.children.filter(is_active=True).count()

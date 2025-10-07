@@ -54,7 +54,7 @@ urlpatterns = [
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/products/', include(products_api_urls)), # Включаем URL-адреса API для продуктов
-    # path('account/', include(tf_urls)), # Для 2FA - отключено
+    # path('account/', include('two_factor.urls', 'two_factor')), # Для 2FA - временно отключен
     path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),

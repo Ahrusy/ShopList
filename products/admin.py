@@ -1,10 +1,14 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
+from django.shortcuts import render
+from django.urls import path
+from parler.admin import TranslatableAdmin
 from .models import (
     User, Category, Shop, Tag, Product, ProductImage, ProductCharacteristic,
     Seller, Order, OrderItem, Review, Cart, CartItem, Commission,
     Location, UserLocation, PageCategory, Page, PromoCode, Notification, Banner, ProductBanner, StaticPage
 )
+from .analytics import AnalyticsService
 
 
 @admin.register(User)
@@ -34,16 +38,16 @@ class SubcategoryInline(admin.TabularInline):
     def get_queryset(self, request):
         """Ограничиваем только прямыми дочерними категориями"""
         qs = super().get_queryset(request)
-        return qs.order_by('sort_order', 'name')
+        return qs.order_by('sort_order')
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(TranslatableAdmin):
     list_display = ('get_tree_display', 'name', 'category_level', 'products_count', 'sort_order', 'is_active', 'show_in_megamenu', 'created_at')
     list_filter = ('is_active', 'show_in_megamenu', 'category_level', 'created_at')
     search_fields = ('name', 'slug', 'description')
     list_editable = ('sort_order', 'is_active', 'show_in_megamenu')
-    ordering = ('category_level', 'sort_order', 'name')
+    ordering = ('category_level', 'sort_order')
     inlines = [SubcategoryInline]
     actions = ['create_subcategories', 'update_products_count', 'preview_mega_menu']
     
@@ -138,14 +142,14 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Shop)
-class ShopAdmin(admin.ModelAdmin):
+class ShopAdmin(TranslatableAdmin):
     list_display = ('phone', 'email', 'is_active', 'created_at')
     list_filter = ('is_active', 'created_at')
     search_fields = ('phone', 'email')
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(TranslatableAdmin):
     list_display = ('color', 'created_at')
     search_fields = ('color',)
 
@@ -161,7 +165,7 @@ class ProductCharacteristicInline(admin.TabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(TranslatableAdmin):
     list_display = ('name', 'category', 'seller', 'price', 'discount_price', 'stock_quantity', 'rating', 'is_active', 'created_at')
     list_filter = ('is_active', 'category', 'seller', 'created_at')
     search_fields = ('name', 'description', 'sku')
@@ -279,7 +283,7 @@ class PageCategoryAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'created_at')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
-    ordering = ('sort_order', 'name')
+    ordering = ('sort_order',)
 
 
 @admin.register(Page)
@@ -398,3 +402,53 @@ class StaticPageAdmin(admin.ModelAdmin):
             'all': ('admin/css/widgets.css',)
         }
         js = ('admin/js/textarea_resize.js',)
+# Кастомизация админки
+class ShopListAdminSite(admin.AdminSite):
+    site_header = 'ShopList Администрирование'
+    site_title = 'ShopList Admin'
+    index_title = 'Добро пожаловать в панель администрирования ShopList'
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('analytics/', self.admin_view(self.analytics_view), name='analytics'),
+        ]
+        return custom_urls + urls
+    
+    def analytics_view(self, request):
+        """View для страницы аналитики"""
+        analytics_data = AnalyticsService.get_dashboard_data()
+        context = {
+            'title': 'Аналитика',
+            'analytics': analytics_data,
+            'has_permission': True,
+        }
+        return render(request, 'admin/analytics.html', context)
+
+# Заменяем стандартную админку на кастомную
+admin_site = ShopListAdminSite(name='shoplist_admin')
+
+# Регистрируем все модели в кастомной админке
+admin_site.register(User, CustomUserAdmin)
+admin_site.register(Category, CategoryAdmin)
+admin_site.register(Shop, ShopAdmin)
+admin_site.register(Tag, TagAdmin)
+admin_site.register(Product, ProductAdmin)
+# admin_site.register(ProductImage, ProductImageAdmin)  # ProductImage управляется через inline в ProductAdmin
+# admin_site.register(ProductCharacteristic, ProductCharacteristicAdmin)  # Класс не определен
+admin_site.register(Seller, SellerAdmin)
+admin_site.register(Order, OrderAdmin)
+# admin_site.register(OrderItem, OrderItemAdmin)  # Класс не определен
+admin_site.register(Review, ReviewAdmin)
+admin_site.register(Cart, CartAdmin)
+admin_site.register(CartItem, CartItemAdmin)
+admin_site.register(Commission, CommissionAdmin)
+admin_site.register(Location, LocationAdmin)
+admin_site.register(UserLocation, UserLocationAdmin)
+admin_site.register(PageCategory, PageCategoryAdmin)
+admin_site.register(Page, PageAdmin)
+admin_site.register(PromoCode, PromoCodeAdmin)
+admin_site.register(Notification, NotificationAdmin)
+admin_site.register(Banner, BannerAdmin)
+admin_site.register(ProductBanner, ProductBannerAdmin)
+admin_site.register(StaticPage, StaticPageAdmin)
